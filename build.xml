@@ -3,9 +3,10 @@
     <!-- properties --> 
     <dirname  property="path.current"   file="./build.xml" />
     <basename property="host.name"      file="." />
-    <property name="dir.vhostRepo"      location="/blip/vhosts" />  
-    <property name="instance.path"      location="${path.current}" />
+    <property name="dir.vhostRepo"      location="/etc/apache2/other" />  
+    <property name="instance.path"      location="${path.current}/resqee-server" />
     <property name="vhost.confPath"     value="${dir.vhostRepo}/${host.name}.conf" />
+	<property name="nl"                 value="\n" />
     <property name="vhost.templatePath" location="resqee-server/conf/vhost.tpl" />
     <property name="path.hostsFile"     location="/etc/hosts" />    
     <property name="newHostEntry"       value="127.0.0.1    ${host.name}" />        
@@ -40,12 +41,15 @@
     <!-- configure this instance -->
     <target name="configure" 
         description="Configure this virtual host"
-        depends="createVhostRepo,createVhostConfFile,configEtcHosts,restart" />     
+        depends="setupVhostRepo,createVhostConfFile,configEtcHosts,restart" />     
 
     <!-- Make the folder that all vhost conf files go in -->
-    <target name ="createVhostRepo" description="Make the folder that all vhost conf files go in.">
-        <mkdir dir="${dir.vhostRepo}"/>
-        <echo>created: ${dir.vhostRepo}</echo>
+    <target name ="setupVhostRepo"
+    	depends="checksudo"
+    	description="Make the folder that all vhost conf files go in.">
+    	
+    	<chown file="${dir.vhostRepo}" owner="${username}"/>
+        <echo>changed owner of ${dir.vhostRepo} to ${username}</echo>
     </target>       
 
     <!-- check out the vhost's conf file's content -->
@@ -58,7 +62,7 @@
     <!-- create the conf file -->
     <target 
         name="createVhostConfFile" 
-        depends="createVhostRepo"
+        depends="setupVhostRepo"
         description="Create a .conf file for this vhost. If a conf file already exists it will be overwritten.">
                 
         <copy overwrite="true" file="${vhost.templatePath}" tofile="${vhost.confPath}"/>
@@ -76,7 +80,7 @@
         <chown file="${vhost.confPath}" owner="${username}"/>
         <echo>    done</echo>               
         
-        <echo>Make sure your main httpd.con file has a line like</echo>
+        <echo>Make sure your main httpd.conf file has a line like</echo>
         <echo>    Include ${dir.vhostRepo}/*.conf</echo>
     </target>
     
@@ -130,7 +134,7 @@
         description="Make sure ${path.hostsFile} has info for the new vhost">                                                   
 
         <echo>Adding ${host.name} to ${path.hostsFile}</echo>       
-        <echo file="${path.hostsFile}" append="true">${newHostEntry}</echo> 
+    	<echo file="${path.hostsFile}" append="true">${newHostEntry}${line.separator}</echo>
         <echo>    done</echo>       
     </target>
     
@@ -148,35 +152,5 @@
         <exec executable="apachectl">
             <arg value="-S" />
         </exec>     
-    </target>   
-    
-    <!-- show vhosts -->    
-    <target name="howto" description="Instructions for how to setup a new instance and use this build file to automatically configure it">
-        <echo>
-1) create a new folder named what you want the vhost to be called
-    ex: mkdir branch_name.${username}.dev
-    
-    NOTE: the name is important-isg due to how to environment ini configuration works. 
-    Standardizing on &lt;some_name&gt;.dev etc will be pretty important.
-2) cd to that folder    
-    ex: cd branch_name.${username}.dev
-3) checkout the code to the new branch_name.${username}.dev folder:
-    svn co https://arin@svn.blipstage.com/svn/blip/blip/branches/branch_name .
-    or
-    svn co https://arin@svn.blipstage.com/svn/blip/blip/trunk .
-    or
-    svn co https://arin@svn.blipstage.com/svn/blip/blip/tags/tag_name .
-    
-    NOTE: there's a trailing . in those lines
-4) sudo ant configure
-    This will 
-        Create a new vhost file:
-            a) it copies ${vhost.templatePath} to ${dir.vhostRepo}/${host.name}.conf
-            b) replace all instances of $hostname w/ ${host.name}
-            c) replace all instances of $instancePath w/ ${instance.path}
-        Update ${path.hostsFile}  
-            a) adds a line for ${host.name}
-        Restart apache
-        </echo>
     </target>   
 </project>
