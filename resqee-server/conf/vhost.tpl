@@ -8,7 +8,5 @@ php_value memory_limit 250M
     ServerAlias $hostname
 
     ErrorLog "$instancePath/logs/error.log"
-    php_value error_log $instancePath/logs/php_error.log
-    
-    RewriteEngine On
+    php_value error_log $instancePath/logs/php_error.log       
 </VirtualHost>
