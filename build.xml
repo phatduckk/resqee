@@ -2,14 +2,16 @@
 <project name="blip.fm" basedir="." default="hello">
     <!-- properties --> 
     <dirname  property="path.current"   file="./build.xml" />
-    <basename property="host.name"      file="." />
+    <basename property="base.host.name" file="." />
+	<property name="server.host.prefix" value="server" />
+	<property name="client.host.prefix" value="client" />
     <property name="dir.vhostRepo"      location="/etc/apache2/other" />  
-    <property name="instance.path"      location="${path.current}/resqee-server" />
-    <property name="vhost.confPath"     value="${dir.vhostRepo}/${host.name}.conf" />
+    <property name="instance.path"      location="${path.current}" />
+    <property name="vhost.confPath"     value="${dir.vhostRepo}/${base.host.name}.conf" />
 	<property name="nl"                 value="\n" />
     <property name="vhost.templatePath" location="resqee-server/conf/vhost.tpl" />
     <property name="path.hostsFile"     location="/etc/hosts" />    
-    <property name="newHostEntry"       value="127.0.0.1    ${host.name}" />        
+    <property name="newHostsEntry"      value="127.0.0.1    ${server.host.prefix}.${base.host.name}.local ${client.host.prefix}.${base.host.name}.local" />
     <property environment="env" />
     
     <condition property="username" value="${env.SUDO_USER}" else="${env.USER}">
@@ -22,7 +24,7 @@
         
     <!-- Check out the config -->
     <target name ="showConfig" description="Dumps relevant ant properties.">    
-        <echo>host.name          : ${host.name}</echo>
+        <echo>base.host.name     : ${base.host.name}</echo>
         <echo>dir.vhostRepo      : ${dir.vhostRepo}</echo>
         <echo>instance.path      : ${instance.path}</echo>
         <echo>vhost.confPath     : ${vhost.confPath}</echo>
@@ -70,11 +72,12 @@
         <echo>    ${vhost.confPath}</echo>
 
         <echo>replacing tokens in ${vhost.confPath}:</echo>     
-        <echo>    $hostname     => ${host.name}</echo>              
+        <echo>    $hostname     => ${base.host.name}</echo>              
         <echo>    $instancePath => ${instance.path}</echo>
         
-        <replace file="${vhost.confPath}" token="$hostname" value="${host.name}"/>
-        <replace file="${vhost.confPath}" token="$instancePath" value="${instance.path}"/>  
+        <replace file="${vhost.confPath}" token="$serverHostname" value="${server.host.prefix}.${base.host.name}.local"/>
+		<replace file="${vhost.confPath}" token="$clientHostname" value="${client.host.prefix}.${base.host.name}.local"/>
+        <replace file="${vhost.confPath}" token="$instancePath"   value="${instance.path}" />  
         
         <echo>chown ${username} ${vhost.confPath}:</echo>       
         <chown file="${vhost.confPath}" owner="${username}"/>
@@ -111,13 +114,13 @@
         depends="checksudo"
         description="Remove this host from ${path.hostsFile}">
         
-        <echo>Removing ${host.name} from ${path.hostsFile}</echo>                   
+        <echo>Removing ${base.host.name} from ${path.hostsFile}</echo>                   
         
         <loadfile srcfile="${path.hostsFile}" property="newHostsFileContent">
             <filterchain>
                 <tabstospaces tablength="4"/>
                 <tokenfilter>
-                    <replacestring from="${newHostEntry}" to=""/>
+                    <replacestring from="${newHostsEntry}" to=""/>
                 </tokenfilter>              
                 <ignoreblank/>
             </filterchain>
@@ -133,8 +136,8 @@
         depends="checksudo,removeHostsEnry"
         description="Make sure ${path.hostsFile} has info for the new vhost">                                                   
 
-        <echo>Adding ${host.name} to ${path.hostsFile}</echo>       
-    	<echo file="${path.hostsFile}" append="true">${newHostEntry}${line.separator}</echo>
+        <echo>Adding ${base.host.name} to ${path.hostsFile}</echo>       
+    	<echo file="${path.hostsFile}" append="true">${newHostsEntry}${line.separator}</echo>
         <echo>    done</echo>       
     </target>
     
