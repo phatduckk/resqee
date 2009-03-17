@@ -1,5 +1,8 @@
 <?php
-
+/**
+ * Pretty simple controller
+ *
+ */
 abstract class ReSQee_Controller
 {
     /**
@@ -46,16 +49,6 @@ abstract class ReSQee_Controller
      * @var string
      */
     protected $outputFormat = null;
-
-    /**
-     * Path to the template that will render this request.
-     *
-     * The value is:
-     * $this->basePath/$this->outputFormat/$this->action.php
-     *
-     * @var string
-     */
-    protected $templatePath = null;
 
     /*
      * output formats
@@ -127,14 +120,61 @@ abstract class ReSQee_Controller
                 $this->detail = $parts[2];
                 break;
         }
+    }
 
-        $this->templatePath = "{$this->basePath}/{$this->outputFormat}/{$this->action}.php";
+    /**
+     * Get the path to the template that will render this request
+     *
+     * @return string
+     */
+    protected function getTemplatePath()
+    {
+        return "{$this->basePath}/{$this->outputFormat}/{$this->action}.php";
+    }
+
+    /**
+     * GHet the name of the action that needs to run for this request
+     *
+     * @return string
+     */
+    public function getAction()
+    {
+        return $this->action;
+    }
+
+    /**
+     * Forward work over to another action
+     *
+     * @param string $newAction The action to forward the control to
+     *
+     * @return mixed
+     */
+    protected function forward($newAction)
+    {
+        $this->action = $newAction;
+        return call_user_func_array(array($this, $newAction), func_get_args());
+    }
+
+    /**
+     * Render this request
+     *
+     * The rendering is performed by instnciating a new ReSQee_Template.
+     * All member variables of this class will be passed over to the template.
+     * The template is determined by the value of $this->getTemplatePath();
+     *
+     * @return void
+     */
+    protected function render()
+    {
+        echo new ReSQee_Template($this->getTemplatePath(), get_object_vars($this));
     }
 
     /**
      * Factory method to get an instance of a controller
      *
      * @param string $uri The URI we want a controller for
+     *
+     * @return ReSQee_Controller
      */
     public static function factory($uri)
     {

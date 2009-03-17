@@ -1,14 +1,18 @@
 <?php
 
-function p($x) {
+function p($x, $str = null)
+{
+    if ($str) echo "<h2>$str</h2>";
     echo '<pre>', print_r($x, true), '</pre><hr>';
 }
 
-p(substr(PHP_OS, 0, 3));
+function __autoload($className)
+{
+    require_once str_replace('_', '/', $className);
+}
 
-// global error handler
-// global exception handler
-// __autoload for RiSQ_Job classes
+$controller = ReSQee_Controller::factory($_SERVER['REQUEST_URI']);
+$action     = $controller->getAction();
+$controller->$action();
 
-p($_SERVER);
 ?>
