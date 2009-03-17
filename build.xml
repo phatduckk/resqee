@@ -43,7 +43,13 @@
     <!-- configure this instance -->
     <target name="configure" 
         description="Configure this virtual host"
-        depends="setupVhostRepo,createVhostConfFile,configEtcHosts,restart" />     
+        depends="setupVhostRepo,createVhostConfFile,configEtcHosts,restart">
+
+        <echo>Opening brower to http://${server.host.prefix}.${base.host.name}.local</echo>
+        <exec executable="open">
+            <arg value="http://${server.host.prefix}.${base.host.name}.local" />
+        </exec>        	
+	</target>     
 
     <!-- Make the folder that all vhost conf files go in -->
     <target name ="setupVhostRepo"
@@ -72,9 +78,10 @@
         <echo>    ${vhost.confPath}</echo>
 
         <echo>replacing tokens in ${vhost.confPath}:</echo>     
-        <echo>    $hostname     => ${base.host.name}</echo>              
-        <echo>    $instancePath => ${instance.path}</echo>
-        
+        <echo>    $serverHostname => ${server.host.prefix}.${base.host.name}.local</echo>
+		<echo>    $clientHostname => ${client.host.prefix}.${base.host.name}.local</echo>              
+        <echo>    $instancePath   => ${instance.path}</echo>
+		
         <replace file="${vhost.confPath}" token="$serverHostname" value="${server.host.prefix}.${base.host.name}.local"/>
 		<replace file="${vhost.confPath}" token="$clientHostname" value="${client.host.prefix}.${base.host.name}.local"/>
         <replace file="${vhost.confPath}" token="$instancePath"   value="${instance.path}" />  
