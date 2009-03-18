@@ -24,6 +24,8 @@ php_value memory_limit 250M
     DocumentRoot "$instancePath/resqee-client/www"
     ServerName $clientHostname
     ServerAlias $clientHostname
+    
+    SetEnv RESQEE_SERVER $serverHostname
 
     ErrorLog "$instancePath/resqee-client/logs/error.log"
     

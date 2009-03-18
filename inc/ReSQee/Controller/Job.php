@@ -52,7 +52,7 @@ class ReSQee_Controller_Job extends ReSQee_Controller
      */
     public function post()
     {
-
+        9+0;
     }
 
     /**
