@@ -1,14 +1,17 @@
-<?PHP
+<h1>test files</h1>
 
-define('RESQEE_HOST', "http://" . getenv('RESQEE_SERVER'));
+<p>
+    just toss files in to the <code>www</code> folder.
+    make sure you require/include config.php
+</p>
 
-
-?>
-
-<fieldset>
-    <legend>testing posting to <?= RESQEE_HOST ?></legend>
-    <form method="POST" action="<?= RESQEE_HOST ?>/job">
-        <input type="text" name="jobBlob" value="enter some crap" />
-        <input type="submit" value="post job" />
-    </form>
-</fieldset>
+<ul>
+    <?
+        $dh = opendir('./');
+        while ($file = readdir($dh)) {
+            if (strpos($file, '.') !== 0) {
+                echo "<li><a href=\"$file\">$file</a>";
+            }
+        }
+    ?>
+</ul>

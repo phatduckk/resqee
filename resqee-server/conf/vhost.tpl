@@ -29,6 +29,6 @@ php_value memory_limit 250M
 
     ErrorLog "$instancePath/resqee-client/logs/error.log"
     
-    php_value include_path $instancePath/inc
+    php_value include_path $instancePath/inc:.
     php_value error_log $instancePath/resqee-client/logs/php_error.log
 </VirtualHost>
