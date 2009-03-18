@@ -205,7 +205,7 @@ abstract class ReSQee_Controller
      */
     public static function factory($serverGlobal)
     {
-        $uri        = $serverGlobal['REQUEST_URI'];
+        $uri        = $serverGlobal['REDIRECT_URL'];
         $controller = null;
         $trimmed    = trim($uri, '/');
 

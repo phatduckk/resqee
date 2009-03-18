@@ -42,6 +42,8 @@ class ReSQee_Controller_Job extends ReSQee_Controller
     {
         // redirect to jobs?
         // or maybe show info about creating a job...
+
+        echo print_r($_GET, 1);
     }
 
     /**
@@ -52,7 +54,11 @@ class ReSQee_Controller_Job extends ReSQee_Controller
      */
     public function post()
     {
-        9+0;
+        $serialized = stripslashes($_POST['job']);
+        $job        = unserialize($serialized);
+        $result     = $job->run();
+
+        echo serialize($result);
     }
 
     /**

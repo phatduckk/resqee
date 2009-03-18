@@ -12,6 +12,7 @@ function __autoload($className)
     require_once $filePath;
 }
 
+
 $controller = ReSQee_Controller::factory($_SERVER);
 $action     = $controller->getAction();
 $controller->$action();

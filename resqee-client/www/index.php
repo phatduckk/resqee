@@ -5,6 +5,10 @@
     make sure you require/include config.php
 </p>
 
+<p>
+    my include path is <?= get_include_path() ?>
+</p>
+
 <ul>
     <?
         $dh = opendir('./');

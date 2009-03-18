@@ -11,9 +11,10 @@ php_value memory_limit 250M
     ServerAlias $serverHostname
 
     ErrorLog "$instancePath/resqee-server/logs/error.log"
+    CustomLog "$instancePath/resqee-server/logs/error.log" common
     
     php_value error_log $instancePath/resqee-server/logs/php_error.log
-    php_value include_path $instancePath/inc:$instancePath/resqee-server/templates       
+    php_value include_path $instancePath/jobs-include_path:$instancePath/inc:$instancePath/resqee-server/templates       
 </VirtualHost>
 
 #
@@ -28,7 +29,8 @@ php_value memory_limit 250M
     SetEnv RESQEE_SERVER $serverHostname
 
     ErrorLog "$instancePath/resqee-client/logs/error.log"
+    CustomLog "$instancePath/resqee-client/logs/error.log" common
     
-    php_value include_path $instancePath/inc:.
+    php_value include_path $instancePath/inc:.:$instancePath/jobs-include_path:
     php_value error_log $instancePath/resqee-client/logs/php_error.log
 </VirtualHost>
