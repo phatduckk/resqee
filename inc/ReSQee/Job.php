@@ -183,8 +183,8 @@ abstract class ReSQee_Job
             socket_close($this->socket);
 
             $parts = explode("\r\n\r\n", $res);
-//            array_shift($parts);
-            $this->result = $res;//unserialize(implode("\r\n\r\n", $parts));
+            array_shift($parts);
+            $this->result = unserialize(implode("\r\n\r\n", $parts));
         }
 
         return $this->result;

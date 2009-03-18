@@ -5,6 +5,6 @@ require_once 'ReSQee/Job.php';
 
 $job = new TestJob();
 p($job->fire());
-//p($job->getResult());
+p($job->getResult());
 
 ?>
