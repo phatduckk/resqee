@@ -50,6 +50,13 @@ abstract class ReSQee_Controller
      */
     protected $outputFormat = null;
 
+    /**
+     * $_SERVER should be passed in to __construct. We store that here
+     *
+     * @var array
+     */
+    protected $serverGlobal = array();
+
     /*
      * output formats
      */
@@ -65,7 +72,9 @@ abstract class ReSQee_Controller
      */
     public function __construct($serverGlobal)
     {
-        $this->uri = rtrim($serverGlobal['REQUEST_URI']);
+        $this->uri          = rtrim($serverGlobal['REQUEST_URI']);
+        $this->serverGlobal = $serverGlobal;
+
         $this->setOutputFormat();
         $this->parseUri($this->uri);
     }
