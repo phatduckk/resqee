@@ -1,2 +1,3 @@
 RewriteEngine on
-RewriteRule .* index.php
+RewriteRule favicon.ico favicon.ico [L]
+RewriteRule .* index.php [L]

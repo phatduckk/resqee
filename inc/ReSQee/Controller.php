@@ -63,10 +63,40 @@ abstract class ReSQee_Controller
      *
      * @param string $uri The URI we're dealing with
      */
-    public function __construct($uri)
+    public function __construct($serverGlobal)
     {
-        $this->uri = rtrim($uri);
+        $this->uri = rtrim($serverGlobal['REQUEST_URI']);
+        $this->setOutputFormat();
         $this->parseUri($this->uri);
+    }
+
+    /**
+     * Set the output format
+     *
+     * @return void
+     */
+    public function setOutputFormat()
+    {
+        $this->outputFormat = self::OUTPUT_DEFAULT;
+
+        $matches = array();
+        if (preg_match('/(.*)\.(\w+)/', $this->uri, $matches)) {
+            $this->uri       = $matches[1];
+            $potentialFormat = $matches[2];
+
+            switch ($potentialFormat) {
+                case self::OUTPUT_JSON :
+                    $this->outputFormat = self::OUTPUT_JSON;
+                    break;
+                case self::OUTPUT_RSS :
+                    $this->outputFormat = self::OUTPUT_RSS;
+                    break;
+                default:
+                    throw new ReSQee_Exception(
+                        "$potentialFormat is not a valid output format"
+                    );
+            }
+        }
     }
 
     /**
@@ -83,27 +113,6 @@ abstract class ReSQee_Controller
      */
     protected function parseUri($uri)
     {
-        $this->outputFormat = self::OUTPUT_DEFAULT;
-
-        $matches = array();
-        if (preg_match('/(.*)\.(\w+))/', $uri, $matches)) {
-            $uri             = $matches[1];
-            $potentialFormat = $matches[2];
-
-            switch ($potentialFormat) {
-                case self::OUTPUT_JSON :
-                    $this->outputFormat = self::OUTPUT_JSON;
-                    break;
-                case self::OUTPUT_RSS :
-                    $this->outputFormat = self::OUTPUT_RSS;
-                    break;
-                default:
-                    throw new ReSQee_Exception(
-                        "$potentialFormat is not a valid output format"
-                    );
-            }
-        }
-
         $parts          = explode('/', trim($uri, '/'));
         $numParts       = count($parts);
         $this->basePath = $parts[0];
@@ -129,7 +138,7 @@ abstract class ReSQee_Controller
      */
     protected function getTemplatePath()
     {
-        return "{$this->basePath}/{$this->outputFormat}/{$this->action}.php";
+        return "action/{$this->basePath}/{$this->outputFormat}/{$this->action}.php";
     }
 
     /**
@@ -166,7 +175,16 @@ abstract class ReSQee_Controller
      */
     protected function render()
     {
+        // this is ghetto but whatever
+        if ($this->outputFormat == self::OUTPUT_PHP) {
+            require_once 'chrome/header.php';
+        }
+
         echo new ReSQee_Template($this->getTemplatePath(), get_object_vars($this));
+
+        if ($this->outputFormat == self::OUTPUT_PHP) {
+            require_once 'chrome/footer.php';
+        }
     }
 
     /**
@@ -176,18 +194,23 @@ abstract class ReSQee_Controller
      *
      * @return ReSQee_Controller
      */
-    public static function factory($uri)
+    public static function factory($serverGlobal)
     {
-        $pathParts = explode('/', trim($uri, '/'));
+        $uri        = $serverGlobal['REQUEST_URI'];
+        $controller = null;
+        $trimmed    = trim($uri, '/');
 
-        $controllerBaseName = (isset($pathParts[0]))
-            ? ucfirst($pathParts[0])
-            : 'Index';
+        if ($trimmed == '') {
+            $controller = 'Index';
+        } else {
+            $pathParts  = explode('/', $trimmed);
+            $controller = ucfirst($pathParts[0]);
+        }
 
         // TODO: need a loader of some type
-        $controllerName = "ReSQee_Controller_{$controllerBaseName}";
+        $className = "ReSQee_Controller_{$controller}";
 
-        return new $controllerName($uri);
+        return new $className($serverGlobal);
     }
 }
 ?>

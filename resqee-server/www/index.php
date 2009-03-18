@@ -8,10 +8,11 @@ function p($x, $str = null)
 
 function __autoload($className)
 {
-    require_once str_replace('_', '/', $className);
+    $filePath = str_replace('_', '/', $className) . '.php';
+    require_once $filePath;
 }
 
-$controller = ReSQee_Controller::factory($_SERVER['REQUEST_URI']);
+$controller = ReSQee_Controller::factory($_SERVER);
 $action     = $controller->getAction();
 $controller->$action();
 
