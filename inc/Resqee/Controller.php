@@ -1,9 +1,13 @@
 <?php
+
+require_once 'Resqee.php';
+require_once 'Resqee/Template.php';
+
 /**
  * Pretty simple controller
  *
  */
-abstract class ReSQee_Controller
+abstract class Resqee_Controller
 {
     /**
      * URI this controller will be dealing with
@@ -101,7 +105,7 @@ abstract class ReSQee_Controller
                     $this->outputFormat = self::OUTPUT_RSS;
                     break;
                 default:
-                    throw new ReSQee_Exception(
+                    throw new Resqee_Exception(
                         "$potentialFormat is not a valid output format"
                     );
             }
@@ -176,7 +180,7 @@ abstract class ReSQee_Controller
     /**
      * Render this request
      *
-     * The rendering is performed by instnciating a new ReSQee_Template.
+     * The rendering is performed by instnciating a new Resqee_Template.
      * All member variables of this class will be passed over to the template.
      * The template is determined by the value of $this->getTemplatePath();
      *
@@ -189,7 +193,7 @@ abstract class ReSQee_Controller
             require_once 'chrome/header.php';
         }
 
-        echo new ReSQee_Template($this->getTemplatePath(), get_object_vars($this));
+        echo new Resqee_Template($this->getTemplatePath(), get_object_vars($this));
 
         if ($this->outputFormat == self::OUTPUT_PHP) {
             require_once 'chrome/footer.php';
@@ -201,7 +205,7 @@ abstract class ReSQee_Controller
      *
      * @param string $uri The URI we want a controller for
      *
-     * @return ReSQee_Controller
+     * @return Resqee_Controller
      */
     public static function factory($serverGlobal)
     {
@@ -216,10 +220,14 @@ abstract class ReSQee_Controller
             $controller = ucfirst($pathParts[0]);
         }
 
-        // TODO: need a loader of some type
-        $className = "ReSQee_Controller_{$controller}";
+        $className = "Resqee_Controller_{$controller}";
 
-        return new $className($serverGlobal);
+        try {
+            Resqee::loadClass($className);
+            return new $className($serverGlobal);
+        } catch (Resqee_Exception $e) {
+            throw new Resqee_Exception("404");
+        }
     }
 }
 ?>

@@ -1,6 +1,8 @@
 <?php
 
-class TestJob extends ReSQee_Job
+require_once 'Resqee/Job.php';
+
+class TestJob extends Resqee_Job
 {
     public function run()
     {

@@ -1,6 +1,6 @@
 <?php
 
-abstract class ReSQee_Job
+abstract class Resqee_Job
 {
     /**
      * The job's ID
@@ -56,7 +56,7 @@ abstract class ReSQee_Job
      * Fire/Queue the job.
      *
      * This method does not actually run the job:
-     * Your job gets set up and sent over to one of the available ReSQee servers
+     * Your job gets set up and sent over to one of the available Resqee servers
      * to do the actual work.
      *
      * You can run this job synchronously or asynchronously
@@ -114,7 +114,7 @@ abstract class ReSQee_Job
         if ($this->jobServer == null) {
             // TODO: need to read this from a config file
             $this->jobServer = array(
-                'host' => 'server.resqee.local',
+                'host' => 'resqee.local',
                 'port' => 80
             );
         }
@@ -129,7 +129,9 @@ abstract class ReSQee_Job
      */
     private final function execute($serializedJob)
     {
-        $postData     = 'job=' . ($serializedJob);
+        $postData = Resqee::KEY_POST_JOB_PARAM . '=' . ($serializedJob) . '&' .
+                    Resqee::KEY_POST_JOB_CLASS_PARAM . '=' . get_class($this);
+
         $jobServer    = $this->getJobServer();
         $this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 
@@ -142,7 +144,7 @@ abstract class ReSQee_Job
         socket_set_block($this->socket);
 
         if ($res === false) {
-            throw new ReSQee_Exception(
+            throw new Resqee_Exception(
                 socket_strerror(),
                 socket_last_error()
             );
@@ -151,7 +153,7 @@ abstract class ReSQee_Job
         $headers = array(
             "POST /job HTTP/1.1",
             "Host: {$jobServer['host']}",
-            'User-Agent: ReSQee Client',
+            'User-Agent: Resqee Client',
             'Connection: Close',
             'Content-Length: ' . strlen($postData),
             "Content-Type: application/x-www-form-urlencoded",

@@ -1,6 +1,6 @@
 <?php
 
-class ReSQee_Controller_Job extends ReSQee_Controller
+class Resqee_Controller_Job extends Resqee_Controller
 {
     /**
      * UUID of the job
@@ -42,8 +42,6 @@ class ReSQee_Controller_Job extends ReSQee_Controller
     {
         // redirect to jobs?
         // or maybe show info about creating a job...
-
-        echo print_r($_GET, 1);
     }
 
     /**
@@ -54,11 +52,27 @@ class ReSQee_Controller_Job extends ReSQee_Controller
      */
     public function post()
     {
-        $serialized = stripslashes($_POST['job']);
-        $job        = unserialize($serialized);
-        $result     = $job->run();
+        try {
+            Resqee::loadClass($_POST[Resqee::KEY_POST_JOB_CLASS_PARAM]);
+        } catch (Exception $e) {
+            throw new Resqee_Exception("Could not load job class");
+        }
 
-        echo serialize($result);
+        $serialized = stripslashes($_POST[Resqee::KEY_POST_JOB_PARAM]);
+        $job        = unserialize($serialized);
+
+        if (!is_object($job) || !($job instanceof Resqee_Job)) {
+            throw new Resqee_Exception(
+                "Invalid job. job must be an instance of Resqee_Job"
+            );
+        }
+
+        try {
+            // todo sandbox the job
+            echo serialize($job->run());
+        } catch (Exception $e) {
+            throw new Resqee_Exception("Your job thew an exception");
+        }
     }
 
     /**

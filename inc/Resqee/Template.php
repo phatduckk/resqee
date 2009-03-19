@@ -3,7 +3,7 @@
  * Quick templating class
  *
  */
-class ReSQee_Template
+class Resqee_Template
 {
     /**
      * Array holding the data for the template
@@ -66,7 +66,7 @@ class ReSQee_Template
             ? array_merge($this->data, $extraData)
             : $this->data;
 
-        echo new ReSQee_Template($template, $data);
+        echo new Resqee_Template($template, $data);
     }
 
     /**

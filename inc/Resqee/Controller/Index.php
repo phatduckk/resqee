@@ -1,6 +1,6 @@
 <?php
 
-class ReSQee_Controller_Index extends ReSQee_Controller
+class Resqee_Controller_Index extends Resqee_Controller
 {
     /**
      * Action to handle the / page

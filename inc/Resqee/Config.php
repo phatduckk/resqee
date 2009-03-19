@@ -1,6 +1,6 @@
 <?php
 
-abstract class ReSQee_Config
+abstract class Resqee_Config
 {
     /**
      * Get the path to the config file
@@ -25,7 +25,7 @@ abstract class ReSQee_Config
 
     /**
      *
-     * @return ReSQee_Config
+     * @return Resqee_Config
      */
     public static function getInstance()
     {
