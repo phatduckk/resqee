@@ -180,14 +180,6 @@ class Resqee_Response
      */
     public function setResult($result)
     {
-        // resources don't serialize so complain if we have a resource
-        // todo: what do we do about resources????
-        if (is_resource($result) && 0) {
-            throw new Resqee_Exception(
-                "Invalid result type: Your job cannot return a resource."
-            );
-        }
-
         $this->serializedResult = serialize($result);
 
         // set $this->resultDataType if $result is a non-stdClass object

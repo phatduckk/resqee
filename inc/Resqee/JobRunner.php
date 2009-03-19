@@ -105,6 +105,13 @@ class Resqee_JobRunner
             $backtrace = debug_backtrace();
         }
 
+        if (is_resource($result)) {
+            trigger_error(
+                "Your job returned a resource. That's useless!",
+                E_USER_WARNING
+            );
+        }
+
         $jobOutput = ob_get_clean();
         $response  = new Resqee_Response($this->serverGlobal);
 
