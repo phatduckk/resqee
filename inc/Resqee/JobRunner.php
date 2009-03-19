@@ -26,6 +26,13 @@ class Resqee_JobRunner
     private $response = null;
 
     /**
+     * Captured errors
+     *
+     * @var array
+     */
+    private $errors = array();
+
+    /**
      * Constructor
      *
      * @param Resqee_Job $job The job
@@ -51,6 +58,23 @@ class Resqee_JobRunner
     }
 
     /**
+     * Error handler that will store any errors in your job
+     *
+     * error_level is set to E_ALL before running your job
+     *
+     */
+    public function handleError($errno, $errstr, $errfile, $errline, $errcontext)
+    {
+        $this->errors[] = array(
+            'errno'      => $errno,
+            'errstr'     => $errstr,
+            'errfile'    => $errfile,
+            'errline'    => $errline,
+            'errcontext' => $errcontext
+        );
+    }
+
+    /**
      * Run the job here
      *
      * We turn output buffering on in order to capture any stray output
@@ -67,6 +91,11 @@ class Resqee_JobRunner
         // start output buffer
         ob_start();
 
+        $currentErrorReporting = ini_get('error_reporting');
+        set_error_handler(array($this, 'handleError'), E_ALL);
+        error_reporting(E_ALL);
+        ini_set('display_errors', 0);
+
         try {
             $start  = microtime(true);
             $result = $this->job->run();
@@ -76,17 +105,23 @@ class Resqee_JobRunner
             $backtrace = debug_backtrace();
         }
 
-        $jobOutput = ob_get_flush();
+        $jobOutput = ob_get_clean();
         $response  = new Resqee_Response($this->serverGlobal);
 
         $response->setResult($result);
-        $response->setOutput($jobOutput);
+        $response->setStdout($jobOutput);
         $response->setExecTime($end - $start);
+        $response->setErrors($this->errors);
 
         if (isset($e)) {
             $response->setException($e);
             $response->setBacktrace($backtrace);
         }
+
+        // restore previous error handler
+        restore_error_handler();
+        error_reporting($currentErrorReporting);
+        ini_set('display_errors', 1);
 
         return $response;
     }

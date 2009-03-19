@@ -1,5 +1,7 @@
 <?php
 
+require_once 'Resqee/JobRunner.php';
+
 class Resqee_Controller_Job extends Resqee_Controller
 {
     /**
@@ -68,10 +70,13 @@ class Resqee_Controller_Job extends Resqee_Controller
         }
 
         try {
-            // todo sandbox the job
-            echo serialize($job->run());
+            $runner   = new Resqee_JobRunner($job, $this->serverGlobal);
+            $response = $runner->getResponse();
+
+            echo serialize($response);
         } catch (Exception $e) {
-            throw new Resqee_Exception("Your job thew an exception");
+//            throw new Resqee_Exception("Your job thew an exception");
+            print_r($e);
         }
     }
 

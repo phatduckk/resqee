@@ -1,5 +1,7 @@
 <?php
 
+require_once 'Resqee/Response.php';
+
 abstract class Resqee_Job
 {
     /**
@@ -28,7 +30,7 @@ abstract class Resqee_Job
      *
      * @var bool
      */
-    private $isAsyc = false;
+    private $isAsyc = true;
 
     /**
      * Resource to the socket we'll be using for connecting to the server
@@ -37,6 +39,13 @@ abstract class Resqee_Job
      * @var resource
      */
     private $socket = null;
+
+    /**
+     * The response from the server
+     *
+     * @var Resqee_Response
+     */
+    private $response;
 
     /**
      * The result of the job
@@ -129,6 +138,8 @@ abstract class Resqee_Job
      */
     private final function execute($serializedJob)
     {
+        $this->isJobFired = true;
+
         $postData = Resqee::KEY_POST_JOB_PARAM . '=' . ($serializedJob) . '&' .
                     Resqee::KEY_POST_JOB_CLASS_PARAM . '=' . get_class($this);
 
@@ -163,9 +174,6 @@ abstract class Resqee_Job
         socket_write($this->socket, implode("\r\n", $headers));
         socket_write($this->socket, "\r\n\r\n");
         socket_write($this->socket, $postData);
-
-
-//        socket_write($this->socket, "\r\njob=" . urlencode($serializedJob) . "\r\n\r\n");
     }
 
     /**
@@ -175,7 +183,11 @@ abstract class Resqee_Job
      */
     public function getResult()
     {
-        if (! isset($this->result)) {
+        if (! $this->isJobFired) {
+            $this->fire(false);
+        }
+
+        if (! isset($this->response)) {
             $res = $b = null;
 
             while ($b = socket_read($this->socket, 8096)) {
@@ -186,10 +198,22 @@ abstract class Resqee_Job
 
             $parts = explode("\r\n\r\n", $res);
             array_shift($parts);
-            $this->result = unserialize(implode("\r\n\r\n", $parts));
+
+            $this->response = unserialize(implode("\r\n\r\n", $parts));
+            $this->result   = $this->response->getResult();
         }
 
         return $this->result;
+    }
+
+    /**
+     * Get the response that the server returned
+     *
+     * @return Resqee_Response
+     */
+    public function getResponse()
+    {
+        return $this->response;
     }
 }
 

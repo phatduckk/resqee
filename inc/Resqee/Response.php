@@ -24,6 +24,32 @@ class Resqee_Response
     private $resultDataType = null;
 
     /**
+     * Any exception caught when run() was called on your job
+     *
+     * @var Exception
+     */
+    private $exception = null;
+
+    /**
+     * Any stray output generated in your job
+     *
+     * You can use this for debugging, i guess, but your job really shouldnt
+     * produce any stray output
+     *
+     * @var string
+     */
+    private $stdout = null;
+
+    /**
+     * The captured output of php errors in your job.
+     *
+     * The error level is E_ALL
+     *
+     * @var array
+     */
+    private $errors = array();
+
+    /**
      * const for status code key in $status
      */
     const STATUS_CODE = 'code';
@@ -41,7 +67,13 @@ class Resqee_Response
     /**
      * const for unixtime of the response in $status
      */
-    const STATUS_RESPONSE_TIME = 'requestTime';
+    const STATUS_RESPONSE_TIME = 'responseTime';
+
+    /**
+     * const used as key in $status to represent how many seconds a job took
+     *
+     */
+    const EXEC_MS = 'ms';
 
     /**
      * Result of the job as serialized PHP
@@ -51,27 +83,34 @@ class Resqee_Response
     private $serializedResult = null;
 
     /**
+     * A backtrace if your job threw an exception
+     *
+     * This is for dev purposes mostly. Odds are you won't programatically
+     * use this but for dev it's nice to have the backtrace handy to look
+     * at locallay as opposed to having track down logs on the server
+     *
+     * @var array
+     */
+    private $backtrace = null;
+
+    /**
      * Constructor
      *
-     * @param mixed $result
      */
-    public final function __construct($result = null)
+    public final function __construct($serverglobal)
     {
         $this->setResponseTime();
-
-        if ($result) {
-            $this->setResult($result);
-        }
+        $this->setRequestTime($serverglobal['REQUEST_TIME']);
     }
 
     /**
      * Set the request time
      *
-     * @param int $unixTime
+     * @param int $unixtime
      */
-    private function setRequestTime($unixTime)
+    private function setRequestTime($unixtime)
     {
-        $this->status[self::STATUS_REQUEST_TIME] = $unixTime;
+        $this->status[self::STATUS_REQUEST_TIME] = $unixtime;
     }
 
     /**
@@ -87,7 +126,49 @@ class Resqee_Response
             ? $unixtime
             : time();
 
-        $this->status[self::STATUS_RESPONSE_TIME] = $unixTime;
+        $this->status[self::STATUS_RESPONSE_TIME] = $unixtime;
+    }
+
+    /**
+     * Set the bracktrace
+     *
+     * @param array $backtrace The backtrace
+     */
+    public function setBacktrace(array $backtrace)
+    {
+        $this->backtrace = $backtrace;
+    }
+
+    /**
+     * Get the backtrace
+     *
+     * If there was an exception we'll have a backtrace
+     *
+     * @return array The backtrace
+     */
+    public function getBacktrace()
+    {
+        return $this->backtrace;
+    }
+
+    /**
+     * Get the array that contains status meta data
+     *
+     * @return array The status info
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    /**
+     * Set $status['execSeconds']
+     *
+     * @param float $seconds
+     */
+    public function setExecTime($seconds)
+    {
+        $this->status[self::EXEC_MS] = round($seconds * 1000, 4);
     }
 
     /**
@@ -100,7 +181,8 @@ class Resqee_Response
     public function setResult($result)
     {
         // resources don't serialize so complain if we have a resource
-        if (is_resource($result)) {
+        // todo: what do we do about resources????
+        if (is_resource($result) && 0) {
             throw new Resqee_Exception(
                 "Invalid result type: Your job cannot return a resource."
             );
@@ -128,6 +210,55 @@ class Resqee_Response
     }
 
     /**
+     * Set the exception if the job threw one
+     *
+     * @param Exception $e
+     */
+    public function setException(Exception $e)
+    {
+        $this->exception = $e;
+    }
+
+    /**
+     * Get the exception your job threw... if any
+     *
+     * @return Exception
+     */
+    public function getException()
+    {
+        return $this->exception;
+    }
+
+    /**
+     * Set $output
+     *
+     * @param string $output The output caught from the job
+     */
+    public function setStdout($output)
+    {
+        $this->stdout = $output;
+    }
+
+    /**
+     * Add any php errors to $this->errors
+     *
+     * @param array $err An error message
+     */
+    public function setErrors(array $errors)
+    {
+        $this->errors = $errors;
+    }
+
+    /**
+     * Get any php errors you job might have triggered
+     *
+     */
+    public function getErrors()
+    {
+        return $this->errors;
+    }
+
+    /**
      * Get the result
      *
      * This method will unserialize the response from the server
@@ -136,6 +267,10 @@ class Resqee_Response
      */
     public function getResult()
     {
+        if ($this->resultDataType !== null) {
+            Resqee::loadClass($this->resultDataType);
+        }
+
         return unserialize($this->serializedResult);
     }
 }
