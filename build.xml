@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="blip.fm" basedir="." default="hello">
     <!-- properties --> 
-    <dirname  property="path.current"   file="./build.xml" />
-    <basename property="base.host.name" file="." />
+    <dirname  property="currentPath"    file="./build.xml" />
+    <basename property="baseHostname"   file="." />
 	<property name="server.host.prefix" value="server" />
-	<property name="client.host.prefix" value="client" />
-    <property name="dir.vhostRepo"      location="/etc/apache2/other" />  
-    <property name="instance.path"      location="${path.current}" />
-    <property name="vhost.confPath"     value="${dir.vhostRepo}/${base.host.name}.conf" />
-	<property name="nl"                 value="\n" />
-    <property name="vhost.templatePath" location="resqee-server/conf/vhost.tpl" />
-    <property name="path.hostsFile"     location="/etc/hosts" />    
-    <property name="newHostsEntry"      value="127.0.0.1    ${server.host.prefix}.${base.host.name}.local ${client.host.prefix}.${base.host.name}.local" />
+	<property name="clientSubdomain"    value="client" />
+    <property name="vhostRepo"          location="/etc/apache2/other" />  
+    <property name="instancePath"       location="${currentPath}" />
+    <property name="vhostConfPath"      value="${vhostRepo}/${baseHostname}.conf" />
+    <property name="vhostTemplatePath"  location="resqee-server/conf/vhost.tpl" />
+    <property name="etcHostsPath"       location="/etc/hosts" />    
+    <property name="newHostsEntry"      value="127.0.0.1    ${baseHostname}.local ${clientSubdomain}.${baseHostname}.local" />
     <property environment="env" />
     
     <condition property="username" value="${env.SUDO_USER}" else="${env.USER}">
@@ -24,13 +23,13 @@
         
     <!-- Check out the config -->
     <target name ="showConfig" description="Dumps relevant ant properties.">    
-        <echo>base.host.name     : ${base.host.name}</echo>
-        <echo>dir.vhostRepo      : ${dir.vhostRepo}</echo>
-        <echo>instance.path      : ${instance.path}</echo>
-        <echo>vhost.confPath     : ${vhost.confPath}</echo>
-        <echo>vhost.templatePath : ${vhost.templatePath}</echo>
-        <echo>username           : ${username}</echo>
-        <echo>isRoot             : ${isRoot}</echo>             
+        <echo>baseHostname      : ${baseHostname}</echo>
+        <echo>vhostRepo         : ${vhostRepo}</echo>
+        <echo>instancePath      : ${instancePath}</echo>
+        <echo>vhostConfPath     : ${vhostConfPath}</echo>
+        <echo>vhostTemplatePath : ${vhostTemplatePath}</echo>
+        <echo>username          : ${username}</echo>
+        <echo>isRoot            : ${isRoot}</echo>             
     </target>
 
     <!-- hi -->
@@ -45,10 +44,7 @@
         description="Configure this virtual host"
         depends="setupVhostRepo,createVhostConfFile,configEtcHosts,restart">
 
-        <echo>Opening brower to http://${server.host.prefix}.${base.host.name}.local</echo>
-        <exec executable="open">
-            <arg value="http://${server.host.prefix}.${base.host.name}.local" />
-        </exec>        	
+        <echo>Point your browser at http://${baseHostname}.local or http://${clientSubdomain}.${baseHostname}.local</echo>               	
 	</target>     
 
     <!-- Make the folder that all vhost conf files go in -->
@@ -56,14 +52,14 @@
     	depends="checksudo"
     	description="Make the folder that all vhost conf files go in.">
     	
-    	<chown file="${dir.vhostRepo}" owner="${username}"/>
-        <echo>changed owner of ${dir.vhostRepo} to ${username}</echo>
+    	<chown file="${vhostRepo}" owner="${username}"/>
+        <echo>changed owner of ${vhostRepo} to ${username}</echo>
     </target>       
 
     <!-- check out the vhost's conf file's content -->
     <target name="dumpVhostConfig" description="Check out the virtual host's conf file">
-        <echo>dumping content of: ${vhost.confPath}</echo>
-        <loadfile property="vhostContent" srcFile="${vhost.confPath}" />
+        <echo>dumping content of: ${vhostConfPath}</echo>
+        <loadfile property="vhostContent" srcFile="${vhostConfPath}" />
         <echo>${vhostContent}</echo>
     </target>
     
@@ -73,30 +69,30 @@
         depends="setupVhostRepo"
         description="Create a .conf file for this vhost. If a conf file already exists it will be overwritten.">
                 
-        <copy overwrite="true" file="${vhost.templatePath}" tofile="${vhost.confPath}"/>
+        <copy overwrite="true" file="${vhostTemplatePath}" tofile="${vhostConfPath}"/>
         <echo>Created conf file:</echo>
-        <echo>    ${vhost.confPath}</echo>
+        <echo>    ${vhostConfPath}</echo>
 
-        <echo>replacing tokens in ${vhost.confPath}:</echo>     
-        <echo>    $serverHostname => ${server.host.prefix}.${base.host.name}.local</echo>
-		<echo>    $clientHostname => ${client.host.prefix}.${base.host.name}.local</echo>              
-        <echo>    $instancePath   => ${instance.path}</echo>
+        <echo>replacing tokens in ${vhostConfPath}:</echo>     
+        <echo>    $serverHostname => ${baseHostname}.local</echo>
+		<echo>    $clientHostname => ${clientSubdomain}.${baseHostname}.local</echo>              
+        <echo>    $instancePath   => ${instancePath}</echo>
 		
-        <replace file="${vhost.confPath}" token="$serverHostname" value="${server.host.prefix}.${base.host.name}.local"/>
-		<replace file="${vhost.confPath}" token="$clientHostname" value="${client.host.prefix}.${base.host.name}.local"/>
-        <replace file="${vhost.confPath}" token="$instancePath"   value="${instance.path}" />  
+        <replace file="${vhostConfPath}" token="$serverHostname" value="${baseHostname}.local"/>
+		<replace file="${vhostConfPath}" token="$clientHostname" value="${clientSubdomain}.${baseHostname}.local"/>
+        <replace file="${vhostConfPath}" token="$instancePath"   value="${instancePath}" />  
         
-        <echo>chown ${username} ${vhost.confPath}:</echo>       
-        <chown file="${vhost.confPath}" owner="${username}"/>
+        <echo>chown ${username} ${vhostConfPath}:</echo>       
+        <chown file="${vhostConfPath}" owner="${username}"/>
         <echo>    done</echo>               
         
         <echo>Make sure your main httpd.conf file has a line like</echo>
-        <echo>    Include ${dir.vhostRepo}/*.conf</echo>
+        <echo>    Include ${vhostRepo}/*.conf</echo>
     </target>
     
     <!-- cleanup -->
     <target name="clean" depends="checksudo,removeHostsEnry,removeVhost,restart"
-        description="Clean up this host by removing vhost and ${path.hostsFile} entries" />
+        description="Clean up this host by removing vhost and ${etcHostsPath} entries" />
     
     <!-- check for sudo -->
     <target name="checksudo">
@@ -109,21 +105,21 @@
     <target name="removeVhost" depends="checksudo" 
         description="Remove this vhost from apache &amp; restart the server">
         
-        <echo>Deleting: ${vhost.confPath}</echo>
-        <delete file="${vhost.confPath}"/>
+        <echo>Deleting: ${vhostConfPath}</echo>
+        <delete file="${vhostConfPath}"/>
         <echo>    done</echo>   
         
         <antcall target="restart" inheritAll="true" />  
     </target>   
     
-    <!-- remove entry from ${path.hostsFile} -->
+    <!-- remove entry from ${etcHostsPath} -->
     <target name="removeHostsEnry" 
         depends="checksudo"
-        description="Remove this host from ${path.hostsFile}">
+        description="Remove this host from ${etcHostsPath}">
         
-        <echo>Removing ${base.host.name} from ${path.hostsFile}</echo>                   
+        <echo>Removing ${baseHostname} from ${etcHostsPath}</echo>                   
         
-        <loadfile srcfile="${path.hostsFile}" property="newHostsFileContent">
+        <loadfile srcfile="${etcHostsPath}" property="newHostsFileContent">
             <filterchain>
                 <tabstospaces tablength="4"/>
                 <tokenfilter>
@@ -133,18 +129,18 @@
             </filterchain>
         </loadfile>     
         
-        <echo file="${path.hostsFile}">${newHostsFileContent}</echo>        
+        <echo file="${etcHostsPath}">${newHostsFileContent}</echo>        
         <echo>    done</echo>               
     </target>
     
-    <!-- update ${path.hostsFile} with new info -->
+    <!-- update ${etcHostsPath} with new info -->
     <target 
         name="configEtcHosts" 
         depends="checksudo,removeHostsEnry"
-        description="Make sure ${path.hostsFile} has info for the new vhost">                                                   
+        description="Make sure ${etcHostsPath} has info for the new vhost">                                                   
 
-        <echo>Adding ${base.host.name} to ${path.hostsFile}</echo>       
-    	<echo file="${path.hostsFile}" append="true">${newHostsEntry}${line.separator}</echo>
+        <echo>Adding ${baseHostname} to ${etcHostsPath}</echo>       
+    	<echo file="${etcHostsPath}" append="true">${newHostsEntry}${line.separator}</echo>
         <echo>    done</echo>       
     </target>
     
