@@ -1,4 +1,8 @@
 <?php
+
+require_once 'Resqee.php';
+require_once 'Resqee/Template.php';
+
 /**
  * Pretty simple controller
  *
@@ -216,10 +220,14 @@ abstract class Resqee_Controller
             $controller = ucfirst($pathParts[0]);
         }
 
-        // TODO: need a loader of some type
         $className = "Resqee_Controller_{$controller}";
 
-        return new $className($serverGlobal);
+        try {
+            Resqee::loadClass($className);
+            return new $className($serverGlobal);
+        } catch (Resqee_Exception $e) {
+            throw new Resqee_Exception("404");
+        }
     }
 }
 ?>

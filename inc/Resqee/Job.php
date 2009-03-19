@@ -114,7 +114,7 @@ abstract class Resqee_Job
         if ($this->jobServer == null) {
             // TODO: need to read this from a config file
             $this->jobServer = array(
-                'host' => 'server.resqee.local',
+                'host' => 'resqee.local',
                 'port' => 80
             );
         }
@@ -129,7 +129,9 @@ abstract class Resqee_Job
      */
     private final function execute($serializedJob)
     {
-        $postData     = 'job=' . ($serializedJob);
+        $postData = Resqee::KEY_POST_JOB_PARAM . '=' . ($serializedJob) . '&' .
+                    Resqee::KEY_POST_JOB_CLASS_PARAM . '=' . get_class($this);
+
         $jobServer    = $this->getJobServer();
         $this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 
