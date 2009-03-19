@@ -101,7 +101,7 @@ class Resqee_Response
     {
         // resources don't serialize so complain if we have a resource
         if (is_resource($result)) {
-            throw new ReSQee_Exception(
+            throw new Resqee_Exception(
                 "Invalid result type: Your job cannot return a resource."
             );
         }

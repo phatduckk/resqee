@@ -33,7 +33,7 @@ class Resqee
             $inc  = @include_once $path;
 
             if (! $inc) {
-                throw new ReSQee_Exception("Could not load class : $className");
+                throw new Resqee_Exception("Could not load class : $className");
             }
         }
 
