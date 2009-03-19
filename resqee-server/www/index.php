@@ -13,7 +13,7 @@ function __autoload($className)
 }
 
 
-$controller = ReSQee_Controller::factory($_SERVER);
+$controller = Resqee_Controller::factory($_SERVER);
 $action     = $controller->getAction();
 $controller->$action();
 

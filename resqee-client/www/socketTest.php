@@ -13,7 +13,7 @@ $res = socket_connect(
 socket_set_block($socket);
 
 if ($res === false) {
-    throw new ReSQee_Exception(
+    throw new Resqee_Exception(
         socket_strerror(),
         socket_last_error()
     );
@@ -23,7 +23,7 @@ $data = "something=ARIN_<>?ROCKS&things=kill";
 $httpData = array(
     "POST /job HTTP/1.1\r\n",
     "Host: {$jobServer["host"]}\r\n",
-    "User-Agent: ReSQee Client\r\n",
+    "User-Agent: Resqee Client\r\n",
     "Content-Length: " . strlen($data) . "\r\n",
     "Content-Type: application/x-www-form-urlencoded\r\n",
     "Connection: close\r\n\r\n",

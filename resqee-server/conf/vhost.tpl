@@ -3,7 +3,7 @@ php_value post_max_size 210M
 php_value memory_limit 250M
 
 #
-# ReSQee server vhost
+# Resqee server vhost
 #
 <VirtualHost *:80>  
     DocumentRoot "$instancePath/resqee-server/www"
@@ -18,7 +18,7 @@ php_value memory_limit 250M
 </VirtualHost>
 
 #
-# ReSQee test client vhost
+# Resqee test client vhost
 # just a random vhost to use for testing n stuff
 #
 <VirtualHost *:80>  
