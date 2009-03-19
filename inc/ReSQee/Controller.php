@@ -72,7 +72,7 @@ abstract class ReSQee_Controller
      */
     public function __construct($serverGlobal)
     {
-        $this->uri          = rtrim($serverGlobal['REQUEST_URI']);
+        $this->uri          = rtrim($serverGlobal['REDIRECT_URL']);
         $this->serverGlobal = $serverGlobal;
 
         $this->setOutputFormat();

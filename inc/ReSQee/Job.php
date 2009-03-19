@@ -97,7 +97,7 @@ abstract class ReSQee_Job
      */
     private function generateJobId()
     {
-        $salt = mt_rand() . microtime(true) . print_r($SERVER, true);
+        $salt = mt_rand() . microtime(true) . print_r($_SERVER, true);
 
         return sha1(serialize($this) . $salt);
     }
