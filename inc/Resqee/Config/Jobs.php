@@ -20,7 +20,7 @@ class Resqee_Config_Jobs extends Resqee_Config
      * const used to fetch/add the config array in APC
      *
      */
-    const APC_KEY_CONFIG = 'RESQEE_CONFIG_JOB_APC_KEY_CONFIG' ;
+    const APC_KEY_CONFIG = 'RESQEE_CONFIG_JOB_APC_KEY_CONFIG';
 
     /**
      * const to determine how long we store the config in apc
@@ -86,7 +86,7 @@ class Resqee_Config_Jobs extends Resqee_Config
      *
      * @return array The server's info
      */
-    public static function getServer(Resqee_Job $job)
+    public function getServer(Resqee_Job $job)
     {
         $config  = Resqee_Config_Jobs::getInstance();
         $allJobs = $config->getConfig();
