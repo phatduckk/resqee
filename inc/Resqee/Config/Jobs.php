@@ -42,14 +42,14 @@ class Resqee_Config_Jobs extends Resqee_Config
      *
      * @var bool
      */
-    private $isAPCEnabled = false;
+    private static $isAPCEnabled = false;
 
     /**
      * A list of disabled servers
      *
      * @var array
      */
-    private $disabledServers = array();
+    private static $disabledServers = array();
 
     /**
      * Constructor
@@ -63,9 +63,9 @@ class Resqee_Config_Jobs extends Resqee_Config
     protected function __construct()
     {
         $keySuffix          = (PHP_SAPI == 'cli') ? '_cli' : '';
-        $this->isAPCEnabled = ini_get('apc.enabled' . $keySuffix);
+        self::$isAPCEnabled = ini_get('apc.enabled' . $keySuffix);
 
-        if ($this->isAPCEnabled) {
+        if (self::$isAPCEnabled) {
             $config = apc_fetch(self::APC_KEY_CONFIG);
 
             if ($config !== false) {
@@ -106,7 +106,7 @@ class Resqee_Config_Jobs extends Resqee_Config
      *
      * @return array The server's info
      */
-    public function getServer(Resqee_Job $job)
+    public static function getServer(Resqee_Job $job)
     {
         $config  = Resqee_Config_Jobs::getInstance();
         $allJobs = $config->getConfig();
@@ -118,7 +118,7 @@ class Resqee_Config_Jobs extends Resqee_Config
             shuffle($all);
 
             while ($info = array_shift($all)) {
-                if (! $this->isServerDisabled($info)) {
+                if (! $config->isServerDisabled($info)) {
                     return $info;
                 }
             }
@@ -144,15 +144,17 @@ class Resqee_Config_Jobs extends Resqee_Config
      *
      * @return void
      */
-    public function disableServer($hostAndPort)
+    public static function disableServer($hostAndPort)
     {
+        Resqee_Config_Jobs::getInstance();
+
         if (is_array($hostAndPort)) {
             $hostAndPort = "{$hostAndPort['host']}:{$hostAndPort['port']}";
         }
 
-        $this->disabledServers[$hostAndPort] = true;
+        self::$disabledServers[$hostAndPort] = true;
 
-        if ($this->isAPCEnabled) {
+        if (self::$isAPCEnabled) {
             apc_add(
                 self::APC_KEY_SERVER_DISABLED . $hostAndPort,
                 true,
@@ -178,8 +180,8 @@ class Resqee_Config_Jobs extends Resqee_Config
         }
 
         return (
-            isset($this->disabledServers[$hostAndPort])
-            || apc_fetch(self::APC_TTL_DISABLE_SERVER . $hostAndPort)
+            isset(self::$disabledServers[$hostAndPort])
+            || apc_fetch(self::APC_KEY_SERVER_DISABLED . $hostAndPort)
         );
     }
 

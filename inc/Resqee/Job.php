@@ -2,6 +2,7 @@
 
 require_once 'Resqee/Response.php';
 require_once 'Resqee/Config/Jobs.php';
+require_once 'Resqee/Exception/Socket.php';
 
 abstract class Resqee_Job
 {
@@ -11,6 +12,13 @@ abstract class Resqee_Job
      * @var string
      */
     private $jobId = null;
+
+    /**
+     * The job config
+     *
+     * @var Resqee_Config_Jobs
+     */
+    private $jobConfig = null;
 
     /**
      * The schema, hostname & port of the server that will run this job
@@ -34,12 +42,26 @@ abstract class Resqee_Job
     private $isAsyc = true;
 
     /**
+     * The number of times we've tried hitting the server
+     *
+     * @var int
+     */
+    private $numTries = 0;
+
+    /**
      * Resource to the socket we'll be using for connecting to the server
      * when runnning a job asynchronously
      *
      * @var resource
      */
     private $socket = null;
+
+    /**
+     * Serialized version of this job
+     *
+     * @var string
+     */
+    private $serializedJob = null;
 
     /**
      * The response from the server
@@ -77,11 +99,15 @@ abstract class Resqee_Job
      */
     public function fire($async = true)
     {
-        $this->isAsyc  = $async;
-        $this->jobId   = $this->generateJobId();
-        $serializedJob = serialize($this);
+        $this->isJobFired = true;
+        $this->isAsyc     = $async;
 
-        $this->execute($serializedJob);
+        try {
+            $this->execute();
+        } catch (Resqee_Exception_Socket $e) {
+            // couldn't make a connection. Let's retry
+            $this->fire($async);
+        }
 
         if ($async) {
             return $this->jobId;
@@ -107,9 +133,12 @@ abstract class Resqee_Job
      */
     private function generateJobId()
     {
-        $salt = mt_rand() . microtime(true) . print_r($_SERVER, true);
+        if ($this->jobId == null) {
+            $salt = mt_rand() . microtime(true) . print_r($_SERVER, true);
+            $this->jobId = sha1(serialize($this) . $salt);
+        }
 
-        return sha1(serialize($this) . $salt);
+        return $this->jobId;
     }
 
     /**
@@ -121,15 +150,13 @@ abstract class Resqee_Job
      */
     private function getJobServer()
     {
-        if ($this->jobServer == null) {
-            $config = Resqee_Config_Jobs::getInstance();
-            $server = $config->getServer($this);
+        if ($this->numTries > 0) {
+            $server = Resqee_Config_Jobs::getServer($this);
 
             if (! $server) {
                 throw new Resqee_Exception(
                     'There are no servers configured to run this job. ' .
-                    ' Add an entry for this job in <include_path>' .
-                    DIRECTORY_SEPARATOR . $config->getConfigFile()
+                    ' Add an entry for this job in <include_path>'
                 );
             } else {
                 $this->jobServer = $server;
@@ -140,34 +167,63 @@ abstract class Resqee_Job
     }
 
     /**
+     * Retry
+     *
+     * This method will get called if hitting a server has failed or timedout
+     */
+    private function retry()
+    {
+
+    }
+
+    /**
      * Fire off the job asynchronously
      *
      * @return string The job's ID
      */
-    private final function execute($serializedJob)
+    private final function execute()
     {
-        $this->isJobFired = true;
+        $this->numTries++;
+        $this->generateJobId();
 
-        $postData = Resqee::KEY_POST_JOB_PARAM . '=' . ($serializedJob) . '&' .
-                    Resqee::KEY_POST_JOB_CLASS_PARAM . '=' . get_class($this);
+        if ($this->serializedJob == null) {
+            $this->serializedJob = serialize($this);
+        }
+
+        $postData = Resqee::KEY_POST_JOB_PARAM . '=' . ($this->serializedJob) . '&' .
+                    Resqee::KEY_POST_JOB_CLASS_PARAM . '=' . get_class($this) . '&' .
+                    Resqee::KEY_POST_JOB_NUM_TRIES . '=' . $this->numTries;
 
         $jobServer    = $this->getJobServer();
         $this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 
-        $res = socket_connect(
+        // failed creating a socket. disable the server
+        if ($this->socket === false) {
+            Resqee_Config_Jobs::disableServer($jobServer);
+
+            throw new Resqee_Exception_Socket(
+                socket_strerror(socket_last_error()),
+                socket_last_error()
+            );
+        }
+
+        $res = @socket_connect(
             $this->socket,
             $jobServer['host'],
             $jobServer['port']
         );
 
-        socket_set_block($this->socket);
-
+        // failed connecting to the socket
         if ($res === false) {
-            throw new Resqee_Exception(
-                socket_strerror(),
+            Resqee_Config_Jobs::disableServer($jobServer);
+
+            throw new Resqee_Exception_Socket(
+                socket_strerror(socket_last_error()),
                 socket_last_error()
             );
         }
+
+        socket_set_block($this->socket);
 
         $headers = array(
             "POST /job HTTP/1.1",
