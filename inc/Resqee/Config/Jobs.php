@@ -18,15 +18,24 @@ class Resqee_Config_Jobs extends Resqee_Config
 
     /**
      * const used to fetch/add the config array in APC
-     *
      */
     const APC_KEY_CONFIG = 'RESQEE_CONFIG_JOB_APC_KEY_CONFIG';
+
+    /**
+     * Base key for use in APC for a disabled server flag
+     */
+    const APC_KEY_SERVER_DISABLED = 'APC_KEY_SERVER_DISABLED.';
 
     /**
      * const to determine how long we store the config in apc
      */
     // TODO: maybe make this configurable
-    const APC_CONFIG_TTL = 300;
+    const APC_TTL_CONFIG = 300;
+
+    /**
+     * How long we want to disable a server for in APC
+     */
+    const APC_TTL_DISABLE_SERVER = self::APC_TTL_CONFIG;
 
     /**
      * Whether or not apc extension is enabled
@@ -36,17 +45,25 @@ class Resqee_Config_Jobs extends Resqee_Config
     private $isAPCEnabled = false;
 
     /**
+     * A list of disabled servers
+     *
+     * @var array
+     */
+    private $disabledServers = array();
+
+    /**
      * Constructor
      *
      * If the server has APC enabled we'll check to see if the config is there.
      * If so we'll use it. If not we'll shove the config in APC for
-     * self::APC_CONFIG_TTL seconds
+     * self::APC_TTL_CONFIG seconds
      *
      * @return void
      */
     protected function __construct()
     {
-        $this->isAPCEnabled = ini_get('apc.enabled');
+        $keySuffix          = (PHP_SAPI == 'cli') ? '_cli' : '';
+        $this->isAPCEnabled = ini_get('apc.enabled' . $keySuffix);
 
         if ($this->isAPCEnabled) {
             $config = apc_fetch(self::APC_KEY_CONFIG);
@@ -58,7 +75,7 @@ class Resqee_Config_Jobs extends Resqee_Config
 
         if (empty($this->config)) {
             $this->parseConfig($this->getConfigFile());
-            apc_add(self::APC_KEY_CONFIG, $this->config, self::APC_CONFIG_TTL);
+            apc_add(self::APC_KEY_CONFIG, $this->config, self::APC_TTL_CONFIG);
         }
     }
 
@@ -73,7 +90,10 @@ class Resqee_Config_Jobs extends Resqee_Config
     }
 
     /**
-     * Get the info for a server which is able to handle this job
+     * Get the info for a server which is able to handle this job.
+     *
+     * We check local cache and APC to make sure the server isn't marked as
+     * disabled
      *
      * The returned array looks like this
      * array(
@@ -96,10 +116,71 @@ class Resqee_Config_Jobs extends Resqee_Config
 
         if (!empty($all)) {
             shuffle($all);
-            return array_shift($all);
-        } else {
-            return null;
+
+            while ($info = array_shift($all)) {
+                if (! $this->isServerDisabled($info)) {
+                    return $info;
+                }
+            }
         }
+
+        return null;
+    }
+
+    /**
+     * Disable a server
+     *
+     * If a server doesn't respond we want to disable it.
+     *
+     * If you have APC enabled then we'll set a disabled flag there for
+     * APC_TTL_DISABLE_SERVER seconds. We don't store the flag in APC forever
+     * because we don't want to clear APC on your client/web-server in order to
+     * unset that flag in the event the server has come back up.
+     *
+     * Either way - we store the flag in a local cache as well
+     *
+     * @param string|array $hostAndPort localhost:80
+     *  or array('host' => localhost, 'port' => 80)
+     *
+     * @return void
+     */
+    public function disableServer($hostAndPort)
+    {
+        if (is_array($hostAndPort)) {
+            $hostAndPort = "{$hostAndPort['host']}:{$hostAndPort['port']}";
+        }
+
+        $this->disabledServers[$hostAndPort] = true;
+
+        if ($this->isAPCEnabled) {
+            apc_add(
+                self::APC_KEY_SERVER_DISABLED . $hostAndPort,
+                true,
+                self::APC_TTL_DISABLE_SERVER
+            );
+        }
+    }
+
+    /**
+     * Check whether a server is disabled
+     *
+     * We check local cache and APC
+     *
+     * @param string|array $hostAndPort localhost:80
+     *  or array('host' => localhost, 'port' => 80)
+     *
+     * @return bool
+     */
+    public function isServerDisabled($hostAndPort)
+    {
+        if (is_array($hostAndPort)) {
+            $hostAndPort = "{$hostAndPort['host']}:{$hostAndPort['port']}";
+        }
+
+        return (
+            isset($this->disabledServers[$hostAndPort])
+            || apc_fetch(self::APC_TTL_DISABLE_SERVER . $hostAndPort)
+        );
     }
 
     /**
