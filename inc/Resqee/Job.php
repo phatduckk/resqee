@@ -200,7 +200,12 @@ abstract class Resqee_Job
             array_shift($parts);
 
             $this->response = unserialize(implode("\r\n\r\n", $parts));
-            $this->result   = $this->response->getResult();
+
+            if ($this->response->getException() !== null) {
+                throw $this->response->getException();
+            } else {
+                $this->result = $this->response->getResult();
+            }
         }
 
         return $this->result;

@@ -69,15 +69,10 @@ class Resqee_Controller_Job extends Resqee_Controller
             );
         }
 
-        try {
-            $runner   = new Resqee_JobRunner($job, $this->serverGlobal);
-            $response = $runner->getResponse();
+        $runner   = new Resqee_JobRunner($job, $this->serverGlobal);
+        $response = $runner->getResponse();
 
-            echo serialize($response);
-        } catch (Exception $e) {
-//            throw new Resqee_Exception("Your job thew an exception");
-            print_r($e);
-        }
+        echo serialize($response);
     }
 
     /**

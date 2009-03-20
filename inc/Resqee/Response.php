@@ -31,13 +31,6 @@ class Resqee_Response
     private $exception = null;
 
     /**
-     * The class name of the thrown exception... if any
-     *
-     * @var string
-     */
-    private $exceptionClass = null;
-
-    /**
      * Any stray output generated in your job
      *
      * You can use this for debugging, i guess, but your job really shouldnt
@@ -90,17 +83,6 @@ class Resqee_Response
     private $serializedResult = null;
 
     /**
-     * A backtrace if your job threw an exception
-     *
-     * This is for dev purposes mostly. Odds are you won't programatically
-     * use this but for dev it's nice to have the backtrace handy to look
-     * at locallay as opposed to having track down logs on the server
-     *
-     * @var array
-     */
-    private $backtrace = null;
-
-    /**
      * Constructor
      *
      */
@@ -137,28 +119,6 @@ class Resqee_Response
     }
 
     /**
-     * Set the bracktrace
-     *
-     * @param array $backtrace The backtrace
-     */
-    public function setBacktrace(array $backtrace)
-    {
-        $this->backtrace = $backtrace;
-    }
-
-    /**
-     * Get the backtrace
-     *
-     * If there was an exception we'll have a backtrace
-     *
-     * @return array The backtrace
-     */
-    public function getBacktrace()
-    {
-        return $this->backtrace;
-    }
-
-    /**
      * Get the array that contains status meta data
      *
      * @return array The status info
@@ -191,7 +151,7 @@ class Resqee_Response
 
         // set $this->resultDataType if $result is a non-stdClass object
         if (is_object($result) && ! ($result instanceof stdClass)) {
-            $this->resultDataType = gettype($result);
+            $this->resultDataType = get_class($result);
         }
     }
 

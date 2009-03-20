@@ -33,7 +33,12 @@ class Resqee
             $inc  = @include_once $path;
 
             if (! $inc) {
-                throw new Resqee_Exception("Could not load class : $className");
+                throw new Resqee_Exception(
+                    "Could not load class: {$className}. I look in "
+                    . '<include_path>' . DIRECTORY_SEPARATOR
+                    . "{$path} but couldn't find it. Your include_path is: "
+                    . get_include_path()
+                );
             }
         }
 

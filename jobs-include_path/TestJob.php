@@ -1,6 +1,8 @@
 <?php
 
 require_once 'Resqee/Job.php';
+require_once 'TestException.php';
+require_once 'User.php';
 
 class TestJob extends Resqee_Job
 {
@@ -28,6 +30,9 @@ class TestJob extends Resqee_Job
                 return "check the stderr - you should see stuff there";
             case 'array' :
                 return array("hello");
+            case 'custom class' :
+                $u = new User(12345, 'phatduckk');
+                return $u;
             case 'stdClass' :
                 $x = new stdClass;
                 $x->foo = 'im an stdclass';
@@ -35,6 +40,9 @@ class TestJob extends Resqee_Job
                 return $x;
             case 'exception' :
                 throw new Exception("this job threw an exception");
+                break;
+            case 'custom exception' :
+                throw new TestException("custom exception class");
                 break;
             case 'number';
                 return 11;

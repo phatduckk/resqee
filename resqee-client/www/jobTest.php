@@ -1,15 +1,16 @@
 <?php
 
+require_once 'TestJob.php';
+require_once 'Resqee.php';
 require_once 'config.php';
 require_once 'Resqee/Job.php';
 
 $resultModes = array(
-    'array', 'stdClass', 'number', 'resource', 'stderr',
-    'string', 'output', 'exception', 'complex array'
+    'array', 'stdClass', 'number', 'resource', 'stderr', 'custom class',
+    'string', 'output', 'exception', 'complex array', 'custom exception'
 );
 
 ?>
-
 
 <form method="GET" action="<?= $_SERVER['PHP_SELF']?>">
     <fieldset>
@@ -58,20 +59,25 @@ if (! empty($_GET['resultMode'])) {
         p($job->fire(), "The jobs uuid");
     }
 
-    p($job->getResult(), "Result. The job is returning: {$_GET['resultMode']}");
+    try {
+        p($job->getResult(), "Result. The job is returning: {$_GET['resultMode']}");
+    } catch (Exception $e) {
+        p($e, "the job threw an exception and we carried it over to the client");
+    }
 
     p($job, "The whole job");
 
-    $backtrace = $job->getResponse()->getBacktrace();
+    $e = $job->getResponse()->getException();
     if (! empty($backtrace)) {
-        p($job->getResponse()->getException(), "Exception");
-        p($job->getResponse()->getBacktrace(), "Backtrace");
+        p($e, "Exception");
     }
 
     $errors = $job->getResponse()->getErrors();
     if (! empty($errors)) {
         p($errors, "PHP errors");
     }
+
+    p(get_included_files(), "all included files");
 }
 
 ?>
