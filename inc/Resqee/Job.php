@@ -1,6 +1,7 @@
 <?php
 
 require_once 'Resqee/Response.php';
+require_once 'Resqee/Config/Jobs.php';
 
 abstract class Resqee_Job
 {
@@ -121,11 +122,18 @@ abstract class Resqee_Job
     private function getJobServer()
     {
         if ($this->jobServer == null) {
-            // TODO: need to read this from a config file
-            $this->jobServer = array(
-                'host' => 'resqee.local',
-                'port' => 80
-            );
+            $config = Resqee_Config_Jobs::getInstance();
+            $server = $config->getServer($this);
+
+            if (! $server) {
+                throw new Resqee_Exception(
+                    'There are no servers configured to run this job. ' .
+                    ' Add an entry for this job in <include_path>' .
+                    DIRECTORY_SEPARATOR . $config->getConfigFile()
+                );
+            } else {
+                $this->jobServer = $server;
+            }
         }
 
         return $this->jobServer;
