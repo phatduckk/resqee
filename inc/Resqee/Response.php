@@ -31,6 +31,13 @@ class Resqee_Response
     private $exception = null;
 
     /**
+     * The class name of the thrown exception... if any
+     *
+     * @var string
+     */
+    private $exceptionClass = null;
+
+    /**
      * Any stray output generated in your job
      *
      * You can use this for debugging, i guess, but your job really shouldnt
@@ -208,7 +215,8 @@ class Resqee_Response
      */
     public function setException(Exception $e)
     {
-        $this->exception = $e;
+        $this->exception      = $e;
+        $this->exceptionClass = get_class($e);
     }
 
     /**
