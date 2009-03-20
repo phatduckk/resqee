@@ -101,9 +101,12 @@ abstract class Resqee_Job
     {
         $this->isJobFired = true;
         $this->isAsyc     = $async;
+        $jobServer        = $this->getJobServer();
+
+        $this->generateJobId();
 
         try {
-            $this->execute();
+            $this->execute($jobServer);
         } catch (Resqee_Exception_Socket $e) {
             // couldn't make a connection. Let's retry
             $this->fire($async);
@@ -179,22 +182,20 @@ abstract class Resqee_Job
     /**
      * Fire off the job asynchronously
      *
+     * @param array $jobServer An array with host and port of server to run the
+     *  job on
+     *
      * @return string The job's ID
      */
-    private final function execute()
+    private final function execute($jobServer)
     {
         $this->numTries++;
-        $this->generateJobId();
-
-        if ($this->serializedJob == null) {
-            $this->serializedJob = serialize($this);
-        }
+        $this->serializedJob = serialize($this);
 
         $postData = Resqee::KEY_POST_JOB_PARAM . '=' . ($this->serializedJob) . '&' .
                     Resqee::KEY_POST_JOB_CLASS_PARAM . '=' . get_class($this) . '&' .
                     Resqee::KEY_POST_JOB_NUM_TRIES . '=' . $this->numTries;
 
-        $jobServer    = $this->getJobServer();
         $this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
 
         // failed creating a socket. disable the server
