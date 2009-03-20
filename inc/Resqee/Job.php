@@ -73,6 +73,19 @@ abstract class Resqee_Job
     /**
      * This is the method that does the actual work for your job
      *
+     * NOTE: you can make your class' run() method take as many parameters as you
+     * want. So you implementation can look something like:
+     *
+     * <code>
+     * public function run($a, $b)
+     * {
+     *     return $a + $b;
+     * }
+     * </code>
+     *
+     * Any arguments you pass to fire() or getResult() will be proxied over to
+     * your method
+     *
      * @return mixed
      */
     public abstract function run();
@@ -93,7 +106,7 @@ abstract class Resqee_Job
     public function fire($async = true)
     {
         $this->isJobFired = true;
-        $this->isAsyc     = $async;
+        $this->isAsyc     = true;
 
         // exception thrown here if no server was found
         $jobServer = $this->getJobServer();

@@ -14,7 +14,7 @@ class Resqee_Config_Jobs extends Resqee_Config
      * Key in the config array that holds the array of hosts that
      * can service all jobs
      */
-    const ALL = '.all';
+    const ALL = 'Resqee_Job';
 
     /**
      * const used to fetch/add the config array in APC
@@ -111,6 +111,7 @@ class Resqee_Config_Jobs extends Resqee_Config
         $config  = Resqee_Config_Jobs::getInstance();
         $allJobs = $config->getConfig();
         $thisJob = $config->getConfig(get_class($job));
+        $parent  = $config->getConfig(get_parent_class($job));
 
         $all = array_merge($allJobs, $thisJob);
 
@@ -260,10 +261,7 @@ class Resqee_Config_Jobs extends Resqee_Config
             $key = "{$info['host']}:{$info['port']}";
 
             $this->config['job'][$jobName][$key] = $info;
-
-            if ($jobName !== self::ALL) {
-                $this->config['server'][$key][]      = $jobName;
-            }
+            $this->config['server'][$key][]      = $jobName;
         }
     }
 

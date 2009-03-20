@@ -7,10 +7,9 @@ require_once 'User.php';
 class TestJob extends Resqee_Job
 {
     public $mode = null;
-
     public $wait = 0;
 
-    public function run()
+    public function run($foo = null)
     {
         sleep($this->wait);
 
