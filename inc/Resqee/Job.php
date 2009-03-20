@@ -57,13 +57,6 @@ abstract class Resqee_Job
     private $socket = null;
 
     /**
-     * Serialized version of this job
-     *
-     * @var string
-     */
-    private $serializedJob = null;
-
-    /**
      * The response from the server
      *
      * @var Resqee_Response
@@ -191,9 +184,8 @@ abstract class Resqee_Job
     private final function execute($jobServer)
     {
         $this->numTries++;
-        $this->serializedJob = serialize($this);
 
-        $postData = Resqee::KEY_POST_JOB_PARAM . '=' . ($this->serializedJob) . '&' .
+        $postData = Resqee::KEY_POST_JOB_PARAM . '=' . serialize($this) . '&' .
                     Resqee::KEY_POST_JOB_CLASS_PARAM . '=' . get_class($this) . '&' .
                     Resqee::KEY_POST_JOB_NUM_TRIES . '=' . $this->numTries;
 
