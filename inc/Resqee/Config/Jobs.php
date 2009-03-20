@@ -17,6 +17,52 @@ class Resqee_Config_Jobs extends Resqee_Config
     const ALL = '.all';
 
     /**
+     * const used to fetch/add the config array in APC
+     *
+     */
+    const APC_KEY_CONFIG = 'RESQEE_CONFIG_JOB_APC_KEY_CONFIG' ;
+
+    /**
+     * const to determine how long we store the config in apc
+     */
+    // TODO: maybe make this configurable
+    const APC_CONFIG_TTL = 300;
+
+    /**
+     * Whether or not apc extension is enabled
+     *
+     * @var bool
+     */
+    private $isAPCEnabled = false;
+
+    /**
+     * Constructor
+     *
+     * If the server has APC enabled we'll check to see if the config is there.
+     * If so we'll use it. If not we'll shove the config in APC for
+     * self::APC_CONFIG_TTL seconds
+     *
+     * @return void
+     */
+    protected function __construct()
+    {
+        $this->isAPCEnabled = ini_get('apc.enabled');
+
+        if ($this->isAPCEnabled) {
+            $config = apc_fetch(self::APC_KEY_CONFIG);
+
+            if ($config !== false) {
+                $this->config = $config;
+            }
+        }
+
+        if (empty($this->config)) {
+            $this->parseConfig($this->getConfigFile());
+            apc_add(self::APC_KEY_CONFIG, $this->config, self::APC_CONFIG_TTL);
+        }
+    }
+
+    /**
      * Get the name of the config file
      *
      * @return string The name of the config file
