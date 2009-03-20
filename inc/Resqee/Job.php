@@ -101,9 +101,10 @@ abstract class Resqee_Job
     {
         $this->isJobFired = true;
         $this->isAsyc     = $async;
-        $jobServer        = $this->getJobServer();
 
-        $this->generateJobId();
+        // exception thrown here if no server was found
+        $jobServer = $this->getJobServer();
+        $jobId     = $this->generateJobId();
 
         try {
             $this->execute($jobServer);
