@@ -124,8 +124,6 @@ class Resqee_JobRunner
             $response->setException($e);
         }
 
-        $response->includedFiles = get_included_files();
-
         // restore previous error handler
         restore_error_handler();
         error_reporting($currentErrorReporting);
