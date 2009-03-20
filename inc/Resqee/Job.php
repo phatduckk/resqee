@@ -106,7 +106,7 @@ abstract class Resqee_Job
     public function fire($async = true)
     {
         $this->isJobFired = true;
-        $this->isAsyc     = true;
+        $this->isAsyc     = $async;
 
         // exception thrown here if no server was found
         $jobServer = $this->getJobServer();
