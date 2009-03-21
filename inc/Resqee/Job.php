@@ -177,16 +177,6 @@ abstract class Resqee_Job
     }
 
     /**
-     * Retry
-     *
-     * This method will get called if hitting a server has failed or timedout
-     */
-    private function retry()
-    {
-
-    }
-
-    /**
      * Fire off the job asynchronously
      *
      * @param array $jobServer An array with host and port of server to run the
