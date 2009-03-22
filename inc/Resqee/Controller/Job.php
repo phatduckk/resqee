@@ -60,19 +60,31 @@ class Resqee_Controller_Job extends Resqee_Controller
             throw new Resqee_Exception("Could not load job class");
         }
 
+        $responses  = array();
         $serialized = stripslashes($_POST[Resqee::KEY_POST_JOB_PARAM]);
-        $job        = unserialize($serialized);
+        $jobs       = unserialize($serialized);
 
-        if (!is_object($job) || !($job instanceof Resqee_Job)) {
-            throw new Resqee_Exception(
-                "Invalid job. job must be an instance of Resqee_Job"
+        foreach ($jobs as $jobId => $jobData) {
+            $job = unserialize($jobData[Resqee::KEY_POST_JOB_PARAM]);
+
+            if (!is_object($job) || !($job instanceof Resqee_Job)) {
+                throw new Resqee_Exception(
+                    "Invalid job. job must be an instance of Resqee_Job"
+                );
+            }
+
+            $args = unserialize($jobData[Resqee::KEY_POST_JOB_ARGS_PARAM]);
+
+            $runner = new Resqee_JobRunner(
+                $job,
+                $args,
+                $this->serverGlobal
             );
+
+            $responses[$jobData[Resqee::KEY_POST_JOB_ID_PARAM]] = $runner->getResponse();
         }
 
-        $runner   = new Resqee_JobRunner($job, $this->serverGlobal);
-        $response = $runner->getResponse();
-
-        echo serialize($response);
+        echo serialize($responses);
     }
 
     /**

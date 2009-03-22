@@ -10,6 +10,16 @@ class Resqee
     const KEY_POST_JOB_PARAM = 'REQSEE_JOB';
 
     /**
+     * Value used as the POST param for the jobId
+     */
+    const KEY_POST_JOB_ID_PARAM = 'REQSEE_JOB_ID';
+
+    /**
+     * Value used as the POST param for the arguments to the job
+     */
+    const KEY_POST_JOB_ARGS_PARAM = 'REQSEE_JOB_ARGS';
+
+    /**
      * Value used as the POST param for the # of tried
      */
     const KEY_POST_JOB_NUM_TRIES = 'NUM_TRIES';

@@ -7,46 +7,25 @@ require_once 'Resqee/Exception/Socket.php';
 abstract class Resqee_Job
 {
     /**
-     * The job's ID
+     * The queue of jobs
+     *
+     * @var array
+     */
+    private $queue = array();
+
+    /**
+     * A stack of exec's that have been/are-being fired
+     *
+     * @var array
+     */
+    private $execStack = array();
+
+    /**
+     * The last jobId we queued/fired
      *
      * @var string
      */
-    private $jobId = null;
-
-    /**
-     * The job config
-     *
-     * @var Resqee_Config_Jobs
-     */
-    private $jobConfig = null;
-
-    /**
-     * The schema, hostname & port of the server that will run this job
-     *
-     * @var string
-     */
-    private $jobServer = null;
-
-    /**
-     * Whether or not the job is fired
-     *
-     * @var unknown_type
-     */
-    private $isJobFired = false;
-
-    /**
-     * Whether of not the job will run asynchronously
-     *
-     * @var bool
-     */
-    private $isAsyc = true;
-
-    /**
-     * The number of times we've tried hitting the server
-     *
-     * @var int
-     */
-    private $numTries = 0;
+    private $lastJobId = null;
 
     /**
      * Resource to the socket we'll be using for connecting to the server
@@ -57,18 +36,11 @@ abstract class Resqee_Job
     private $socket = null;
 
     /**
-     * The response from the server
+     * The responses from the server
      *
-     * @var Resqee_Response
+     * @var array
      */
-    private $response;
-
-    /**
-     * The result of the job
-     *
-     * @var mixed
-     */
-    private $result;
+    private $responses = array();
 
     /**
      * This is the method that does the actual work for your job
@@ -91,64 +63,85 @@ abstract class Resqee_Job
     public abstract function run();
 
     /**
-     * Fire/Queue the job.
+     * Asynchronously fire off a new job if the queue is empty. Otherwise fire
+     * every job in the queue asynchronously in a single HTTP request.
      *
-     * This method does not actually run the job:
-     * Your job gets set up and sent over to one of the available Resqee servers
-     * to do the actual work.
+     * This job performs one of 2 actions:
+     *  1) If any jobs have been queued it will fire off all the queued jobs.
+     *  2) If no jobs have been queued, or if the queue if empty it will queue
+     *     up a new job with no arguments are fire it.
      *
-     * You can run this job synchronously or asynchronously
+     * This function can optionally take an infinite # of arguments. Any arguemnt
+     * you pass in will be used when calling you class' run() method on the server.
      *
-     * @param bool $async Specify if the job should run aynchronously or not
+     * @args mixed [mixed $... ] Any number of variables of any type. Any arguemnt
+     *  you pass in will be used when calling you class' run() method on the server.
      *
-     * @return mixed If $async then the jobID is returned; else the actual result
+     * @return array|string If the queue if not empty you'll be returned the ID
+     *  of every job we fire (array). If the queue is empty then you'll be
+     *  returned the new job's ID (string).
      */
-    public function fire($async = true)
+    public function fire()
     {
-        $this->isJobFired = true;
-        $this->isAsyc     = $async;
+        $rtn = null;
 
-        // exception thrown here if no server was found
-        $jobServer = $this->getJobServer();
-        $jobId     = $this->generateJobId();
-
-        try {
-            $this->execute($jobServer);
-        } catch (Resqee_Exception_Socket $e) {
-            // couldn't make a connection. Let's retry
-            $this->fire($async);
-        }
-
-        if ($async) {
-            return $this->jobId;
+        if (empty($this->queue)) {
+            if (func_num_args() !== 0) {
+                $args = func_get_args();
+                $rtn  = call_user_func_array(array($this, 'queue'), $args);
+            } else {
+                $rtn = $this->queue();
+            }
         } else {
-            return $this->getResult();
+            $rtn = array_keys($this->queue);
         }
+
+        $this->execQueuedJobs();
+        return $rtn;
     }
 
     /**
-     * Get the ID of this job.
+     * Take all queued jobs and execute them
      *
-     * @return string
+     * @return array The jobId's that we're executing
      */
-    public function getJobId()
+    private function execQueuedJobs()
     {
-        return $this->jobId;
+        $jobs            = $this->queue;
+        $this->queue     = array();
+        $this->execStack = array_merge($this->execStack, $jobs);
+
+        return $this->execute($jobs);
     }
 
     /**
-     * Generate and set the jobId
+     * Queue a job which we'll be running later.
      *
-     * @return void
+     * This method is useful if you want to perform a bunch of jobs on the server
+     * at the same time.
+     *
+     * @args mixed [mixed $... ] Any number of variables of any type. Any arguemnt
+     *  you pass in will be used when calling you class' run() method on the server.
+     *
+     * @return string The ID of the job
      */
-    private function generateJobId()
+    public function queue()
     {
-        if ($this->jobId == null) {
-            $salt = mt_rand() . microtime(true) . print_r($_SERVER, true);
-            $this->jobId = sha1(serialize($this) . $salt);
-        }
+        $args  = (func_num_args()) ? func_get_args() : null;
+        $ser   = serialize($this);
+        $args  = serialize($args);
+        $salt  = mt_rand() . microtime(true) . print_r($_SERVER, true);
+        $jobId = sha1($ser . $salt . $args);
 
-        return $this->jobId;
+        $this->queue[$jobId] = array(
+            Resqee::KEY_POST_JOB_PARAM       => $ser,
+            Resqee::KEY_POST_JOB_CLASS_PARAM => get_class($this),
+            Resqee::KEY_POST_JOB_ARGS_PARAM  => $args,
+            Resqee::KEY_POST_JOB_ID_PARAM    => $jobId
+        );
+
+        $this->lastJobId = $jobId;
+        return $jobId;
     }
 
     /**
@@ -156,68 +149,76 @@ abstract class Resqee_Job
      *
      * If a server hasn't been picked yet we'll go ahead and pick one
      *
-     * @return string
+     * @return array An array with an available server's hostname and post
+     *  array('host' => example.com, 'port' => 80)
      */
     private function getJobServer()
     {
-        if ($this->numTries > 0) {
-            $server = Resqee_Config_Jobs::getServer($this);
+        return Resqee_Config_Jobs::getServer($this);
 
-            if (! $server) {
-                throw new Resqee_Exception(
-                    'There are no servers configured to run this job. ' .
-                    ' Add an entry for this job in <include_path>'
-                );
-            } else {
-                $this->jobServer = $server;
-            }
+        if (! $server) {
+            throw new Resqee_Exception(
+                'There are no servers configured to run this job. ' .
+                ' Add an entry for this job in <include_path>'
+            );
+        } else {
+            return $server;
         }
-
-        return $this->jobServer;
     }
 
     /**
-     * Fire off the job asynchronously
+     * Begin executing one or more job
      *
-     * @param array $jobServer An array with host and port of server to run the
-     *  job on
+     * @param Resqee_Job|array $jobs A Resqee_Job or an array of Resqee_Job objects
      *
-     * @return string The job's ID
+     * @return array The IDs of the jobs we exectued
      */
-    private final function execute($jobServer)
+    private function execute($jobs)
     {
-        $this->numTries++;
-
-        $postData = Resqee::KEY_POST_JOB_PARAM . '=' . serialize($this) . '&' .
-                    Resqee::KEY_POST_JOB_CLASS_PARAM . '=' . get_class($this) . '&' .
-                    Resqee::KEY_POST_JOB_NUM_TRIES . '=' . $this->numTries;
-
-        $this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-
-        // failed creating a socket. disable the server
-        if ($this->socket === false) {
-            Resqee_Config_Jobs::disableServer($jobServer);
-
-            throw new Resqee_Exception_Socket(
-                socket_strerror(socket_last_error()),
-                socket_last_error()
-            );
+        if (! is_array($jobs)) {
+            $jobs = array($jobs);
         }
 
-        $res = @socket_connect(
-            $this->socket,
-            $jobServer['host'],
-            $jobServer['port']
-        );
+        $postData = Resqee::KEY_POST_JOB_CLASS_PARAM . '=' . get_class($this) .
+                    '&' . Resqee::KEY_POST_JOB_PARAM . '=' . serialize($jobs);
 
-        // failed connecting to the socket
-        if ($res === false) {
-            Resqee_Config_Jobs::disableServer($jobServer);
+        $this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+        $jobServer    = null;
 
-            throw new Resqee_Exception_Socket(
-                socket_strerror(socket_last_error()),
-                socket_last_error()
+        while ($jobServer == null) {
+            try {
+                $jobServer = $this->getJobServer();
+            } catch (Resqee_Exception $e) {
+                throw $e;
+            }
+
+            // failed creating a socket. disable the server
+            if ($this->socket === false) {
+                Resqee_Config_Jobs::disableServer($jobServer);
+                $jobServer = null;
+
+                throw new Resqee_Exception_Socket(
+                    socket_strerror(socket_last_error()),
+                    socket_last_error()
+                );
+            }
+
+            $res = @socket_connect(
+                $this->socket,
+                $jobServer['host'],
+                $jobServer['port']
             );
+
+            // failed connecting to the socket
+            if ($res === false) {
+                Resqee_Config_Jobs::disableServer($jobServer);
+                $jobServer = null;
+
+                throw new Resqee_Exception_Socket(
+                    socket_strerror(socket_last_error()),
+                    socket_last_error()
+                );
+            }
         }
 
         socket_set_block($this->socket);
@@ -235,51 +236,51 @@ abstract class Resqee_Job
         socket_write($this->socket, implode("\r\n", $headers));
         socket_write($this->socket, "\r\n\r\n");
         socket_write($this->socket, $postData);
+
+        return array_keys($jobs);
     }
 
     /**
-     * Get the result of the job
+     * Get the result of a fired job
      *
-     * @return mixed
+     * @param string $jobId The ID of a job you want the results for. If you do
+     *  not pass in a $jobId we'll return the result of the last job that was
+     *  fired
+     *
+     * @return mixed The result of your job's run() method
      */
-    public function getResult()
+    public function getResult($jobId = null)
     {
-        if (! $this->isJobFired) {
-            $this->fire(false);
+        $jobId = (! $jobId) ? $this->lastJobId : $jobId;
+
+        if (isset($this->responses[$jobId])) {
+            return $this->responses[$jobId]->getResult();
         }
 
-        if (! isset($this->response)) {
-            $res = $b = null;
-
-            while ($b = socket_read($this->socket, 8096)) {
-                $res .= $b;
-            }
-
-            socket_close($this->socket);
-
-            $parts = explode("\r\n\r\n", $res);
-            array_shift($parts);
-
-            $this->response = unserialize(implode("\r\n\r\n", $parts));
-
-            if ($this->response->getException() !== null) {
-                throw $this->response->getException();
-            } else {
-                $this->result = $this->response->getResult();
-            }
+        if (isset($this->queue[$jobId])) {
+            $this->execQueuedJobs();
         }
 
-        return $this->result;
-    }
+        $res = $b = null;
+        while ($b = socket_read($this->socket, 8096)) {
+            $res .= $b;
+        }
 
-    /**
-     * Get the response that the server returned
-     *
-     * @return Resqee_Response
-     */
-    public function getResponse()
-    {
-        return $this->response;
+        $parts = explode("\r\n\r\n", $res);
+
+        socket_close($this->socket);
+        array_shift($parts);
+
+        $responses       = unserialize(implode("\r\n\r\n", $parts));
+        $this->responses = array_merge($this->responses, $responses);
+
+        if (! isset($this->responses[$jobId])) {
+            throw new Resqee_Exception("Invalid jobId: {$jobId}");
+        } else if ($this->responses[$jobId]->getException() !== null) {
+            throw $this->responses[$jobId]->getException();
+        } else {
+            return $this->responses[$jobId]->getResult();
+        }
     }
 }
 

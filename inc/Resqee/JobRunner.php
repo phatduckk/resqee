@@ -33,13 +33,21 @@ class Resqee_JobRunner
     private $errors = array();
 
     /**
+     * Args to the job's run() method
+     *
+     * @var array
+     */
+    private $args = array();
+
+    /**
      * Constructor
      *
      * @param Resqee_Job $job The job
      */
-    public function __construct(Resqee_Job $job, array $serverGlobal)
+    public function __construct(Resqee_Job $job, array $args = null, array $serverGlobal)
     {
         $this->job          = $job;
+        $this->args         = $args;
         $this->serverGlobal = $serverGlobal;
     }
 
@@ -51,7 +59,9 @@ class Resqee_JobRunner
     public function getResponse()
     {
         if ($this->response == null) {
-            $this->response = $this->runJob();
+            $this->response = ($this->args !== null)
+                ? $this->runJob()
+                : call_user_func_array(array($this, 'runJob'), $this->args);
         }
 
         return $this->response;
@@ -97,8 +107,12 @@ class Resqee_JobRunner
         ini_set('display_errors', 0);
 
         try {
-            $start  = microtime(true);
-            $result = $this->job->run();
+            $start = microtime(true);
+
+            $result = ($this->args)
+                ? call_user_func_array(array($this->job, 'run'), $this->args)
+                : $this->job->run();
+
             $end    = microtime(true);
         } catch (Exception $e) {
             $exception = $e;
