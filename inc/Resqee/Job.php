@@ -28,12 +28,18 @@ abstract class Resqee_Job
     private $lastJobId = null;
 
     /**
-     * Resource to the socket we'll be using for connecting to the server
-     * when runnning a job asynchronously
+     * An array of sockets that we'll be using
      *
-     * @var resource
+     * @var array
      */
-    private $socket = null;
+    private $sockets = null;
+
+    /**
+     * An array with a mapping for jobId => $socket
+     *
+     * @var array
+     */
+    private $jobToSocketMapping = array();
 
     /**
      * The responses from the server
@@ -41,6 +47,13 @@ abstract class Resqee_Job
      * @var array
      */
     private $responses = array();
+
+    /**
+     * Host and port of the server we'll be using to run the job
+     *
+     * @var array
+     */
+    private $jobServer = null;
 
     /**
      * This is the method that does the actual work for your job
@@ -152,17 +165,21 @@ abstract class Resqee_Job
      * @return array An array with an available server's hostname and post
      *  array('host' => example.com, 'port' => 80)
      */
-    private function getJobServer()
+    private function getJobServer($force = false)
     {
-        $server = Resqee_Config_Jobs::getServer($this);
+        if (! $force && $this->jobServer) {
+            return $this->jobServer;
+        }
 
-        if (! $server) {
+        $this->jobServer = Resqee_Config_Jobs::getServer($this);
+
+        if (! $this->jobServer) {
             throw new Resqee_Exception(
                 'There are no servers available to run this job. ' .
                 ' Add an entry for this job in <include_path>'
             );
         } else {
-            return $server;
+            return $this->jobServer;
         }
     }
 
@@ -179,30 +196,42 @@ abstract class Resqee_Job
             $jobs = array($jobs);
         }
 
+        $socketIndex = count($this->sockets);
+
+        foreach ($jobs as $jobId => $job) {
+            $this->jobToSocketMapping[$jobId] = $socketIndex;
+        }
+
         $postData = Resqee::KEY_POST_JOB_CLASS_PARAM . '=' . get_class($this) .
                     '&' . Resqee::KEY_POST_JOB_PARAM . '=' . serialize($jobs);
 
-        $jobServer = null;
+        $forceServer = $jobServer = null;
 
         while ($jobServer == null) {
             try {
-                $jobServer = $this->getJobServer();
-                $this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+                $jobServer   = $this->getJobServer($forceServer);
+                $forceServer = true;
+
+                $this->sockets[$socketIndex] = socket_create(
+                    AF_INET,
+                    SOCK_STREAM,
+                    SOL_TCP
+                );
             } catch (Resqee_Exception $e) {
                 throw $e;
             }
 
             // failed creating a socket. disable the server
-            if ($this->socket === false) {
+            if ($this->sockets[$socketIndex] === false) {
                 Resqee_Config_Jobs::disableServer($jobServer);
-                socket_close($this->socket);
+                socket_close($this->sockets[$socketIndex]);
 
-                $this->socket = $jobServer = null;
+                $this->sockets[$socketIndex] = $jobServer = null;
                 continue;
             }
 
             $res = @socket_connect(
-                $this->socket,
+                $this->sockets[$socketIndex],
                 $jobServer['host'],
                 $jobServer['port']
             );
@@ -210,14 +239,14 @@ abstract class Resqee_Job
             // failed connecting to the socket
             if ($res === false) {
                 Resqee_Config_Jobs::disableServer($jobServer);
-                socket_close($this->socket);
+                socket_close($this->sockets[$socketIndex]);
 
-                $this->socket = $jobServer = null;
+                $this->sockets[$socketIndex] = $jobServer = null;
                 continue;
             }
         }
 
-        socket_set_block($this->socket);
+        socket_set_block($this->sockets[$socketIndex]);
 
         $headers = array(
             "POST /job HTTP/1.1",
@@ -229,9 +258,9 @@ abstract class Resqee_Job
             "Connection: close",
         );
 
-        socket_write($this->socket, implode("\r\n", $headers));
-        socket_write($this->socket, "\r\n\r\n");
-        socket_write($this->socket, $postData);
+        socket_write($this->sockets[$socketIndex], implode("\r\n", $headers));
+        socket_write($this->sockets[$socketIndex], "\r\n\r\n");
+        socket_write($this->sockets[$socketIndex], $postData);
 
         return array_keys($jobs);
     }
@@ -259,20 +288,22 @@ abstract class Resqee_Job
             $this->execQueuedJobs();
         }
 
-        if (! $this->socket) {
+        $socketIndex = $this->jobToSocketMapping[$jobId];
+
+        if (! $this->sockets[$socketIndex]) {
             throw new Resqee_Exception('
                 Could not establish a connection to any servers.
             ');
         }
 
         $res = $b = null;
-        while ($b = socket_read($this->socket, 8096)) {
+        while ($b = socket_read($this->sockets[$socketIndex], 8096)) {
             $res .= $b;
         }
 
         $parts = explode("\r\n\r\n", $res);
 
-        socket_close($this->socket);
+        socket_close($this->sockets[$socketIndex]);
         array_shift($parts);
 
         $responses       = unserialize(implode("\r\n\r\n", $parts));
