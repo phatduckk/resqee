@@ -55,6 +55,8 @@ if (! empty($_GET['resultMode'])) {
     $job->mode = $_GET['resultMode'];
     $job->wait = (@$_GET['wait']) ? $_GET['wait'] : 0;
 
+    $job->queue();
+
     if (isset($_GET['async'])) {
         p($job->fire(), "The jobs uuid");
         p($job->getResult(), "The result of the async job");
@@ -79,6 +81,8 @@ if (! empty($_GET['resultMode'])) {
     }
 
     p(get_included_files(), "all included files");
+
+    p($job->getResponses(), "all responses");
 }
 
 ?>
