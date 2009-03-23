@@ -123,14 +123,17 @@ class Resqee_Config_Jobs extends Resqee_Config
                 }
             }
 
-            $weighted = array();
-            foreach ($avail as $info) {
-                $a = array_fill(0, $info['weight'], $info);
-                $weighted = array_merge($weighted, $a);
-            }
+            // if we've got any available servers we'll weight em
+            if (! empty($avail)) {
+                $weighted = array();
+                foreach ($avail as $info) {
+                    $a = array_fill(0, $info['weight'], $info);
+                    $weighted = array_merge($weighted, $a);
+                }
 
-            shuffle($weighted);
-            $server = $weighted[0];
+                shuffle($weighted);
+                $server = $weighted[0];
+            }
         }
 
         return $server;
