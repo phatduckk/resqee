@@ -61,12 +61,32 @@ abstract class Resqee_Controller
      */
     protected $serverGlobal = array();
 
-    /*
-     * output formats
+    /**
+     * php template type
+     *
+     * @var string
      */
-    const OUTPUT_PHP     = 'php';
-    const OUTPUT_JSON    = 'json';
-    const OUTPUT_RSS     = 'rss';
+    const OUTPUT_PHP = 'php';
+
+    /**
+     * json template type
+     *
+     * @var string
+     */
+    const OUTPUT_JSON = 'json';
+
+    /**
+     * rss template type
+     *
+     * @var string
+     */
+    const OUTPUT_RSS = 'rss';
+
+    /**
+     * default template type
+     *
+     * @var string
+     */
     const OUTPUT_DEFAULT = self::OUTPUT_PHP;
 
     /**

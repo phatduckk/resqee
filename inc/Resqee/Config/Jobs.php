@@ -7,33 +7,44 @@ class Resqee_Config_Jobs extends Resqee_Config
     /**
      * Name of the config file that says which servers can handle which jobs
      *
+     * @var string
      */
     const CONFIG_FILE = 'resqee-jobs.ini';
 
     /**
      * Key in the config array that holds the array of hosts that
      * can service all jobs
+     *
+     * @var string
      */
     const ALL = 'Resqee_Job';
 
     /**
      * const used to fetch/add the config array in APC
+     *
+     * @var string
      */
     const APC_KEY_CONFIG = 'RESQEE_CONFIG_JOB_APC_KEY_CONFIG';
 
     /**
      * Base key for use in APC for a disabled server flag
+     *
+     * @var string
      */
     const APC_KEY_SERVER_DISABLED = 'APC_KEY_SERVER_DISABLED.';
 
     /**
      * const to determine how long we store the config in apc
+     *
+     * @var string
      */
     // TODO: maybe make this configurable
     const APC_TTL_CONFIG = 300;
 
     /**
      * How long we want to disable a server for in APC
+     *
+     * @var string
      */
     const APC_TTL_DISABLE_SERVER = self::APC_TTL_CONFIG;
 
