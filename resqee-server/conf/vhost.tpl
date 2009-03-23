@@ -8,7 +8,7 @@ php_value memory_limit 250M
 <VirtualHost *:80>  
     DocumentRoot "$instancePath/resqee-server/www"
     ServerName $serverHostname
-    ServerAlias $serverHostname
+    ServerAlias $serverAlias
 
     ErrorLog "$instancePath/resqee-server/logs/error.log"
     CustomLog "$instancePath/resqee-server/logs/error.log" common

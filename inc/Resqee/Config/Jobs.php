@@ -108,24 +108,32 @@ class Resqee_Config_Jobs extends Resqee_Config
      */
     public static function getServer(Resqee_Job $job)
     {
+        $server  = null;
         $config  = Resqee_Config_Jobs::getInstance();
         $allJobs = $config->getConfig();
         $thisJob = $config->getConfig(get_class($job));
         $parent  = $config->getConfig(get_parent_class($job));
+        $all     = array_merge($allJobs, $thisJob);
 
-        $all = array_merge($allJobs, $thisJob);
-
-        if (!empty($all)) {
-            shuffle($all);
-
+        if (! empty($all)) {
+            $avail = array();
             while ($info = array_shift($all)) {
                 if (! $config->isServerDisabled($info)) {
-                    return $info;
+                    $avail[] = $info;
                 }
             }
+
+            $weighted = array();
+            foreach ($avail as $info) {
+                $a = array_fill(0, $info['weight'], $info);
+                $weighted = array_merge($weighted, $a);
+            }
+
+            shuffle($weighted);
+            $server = $weighted[0];
         }
 
-        return null;
+        return $server;
     }
 
     /**
@@ -221,8 +229,8 @@ class Resqee_Config_Jobs extends Resqee_Config
 
         foreach ($rawConfig as $k => $v) {
             if (is_array($v)) {
-                foreach ($rawConfig[$k] as $host => $enabled) {
-                    $this->addJob($k, $host, $enabled);
+                foreach ($rawConfig[$k] as $host => $weight) {
+                    $this->addJob($k, $host, $weight);
                 }
             } else if ($v) {
                 $this->addJob(self::ALL, $k, $v);
@@ -233,15 +241,17 @@ class Resqee_Config_Jobs extends Resqee_Config
     /**
      * Set stuff
      *
-     * @param array  $jobName     The name of the job
-     * @param string $host        The name of the host/server
-     * @param string $configValue Value for this entry in the ini
+     * @param array  $jobName The name of the job
+     * @param string $host    The name of the host/server
+     * @param string $weight  Value for this entry in the ini
      *
      * @return void
      */
-    private function addJob($jobName, $host, $configValue)
+    private function addJob($jobName, $host, $weight)
     {
-        if (((int) $configValue)) {
+        $weight = (int) $weight;
+
+        if ($weight !== 0) {
             $info    = array();
             $matches = array();
 
@@ -258,7 +268,8 @@ class Resqee_Config_Jobs extends Resqee_Config
                 );
             }
 
-            $key = "{$info['host']}:{$info['port']}";
+            $info['weight'] = $weight;
+            $key            = "{$info['host']}:{$info['port']}";
 
             $this->config['job'][$jobName][$key] = $info;
             $this->config['server'][$key][]      = $jobName;

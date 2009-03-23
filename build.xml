@@ -10,7 +10,8 @@
     <property name="vhostConfPath"      value="${vhostRepo}/${baseHostname}.conf" />
     <property name="vhostTemplatePath"  location="resqee-server/conf/vhost.tpl" />
     <property name="etcHostsPath"       location="/etc/hosts" />    
-    <property name="newHostsEntry"      value="127.0.0.1    ${baseHostname}.local ${clientSubdomain}.${baseHostname}.local" />
+	<property name="serverAlias"        value="${baseHostname}2.local" />
+    <property name="newHostsEntry"      value="127.0.0.1    ${serverAlias} ${baseHostname}.local ${clientSubdomain}.${baseHostname}.local" />
     <property environment="env" />
     
     <condition property="username" value="${env.SUDO_USER}" else="${env.USER}">
@@ -77,10 +78,13 @@
         <echo>    $serverHostname => ${baseHostname}.local</echo>
 		<echo>    $clientHostname => ${clientSubdomain}.${baseHostname}.local</echo>              
         <echo>    $instancePath   => ${instancePath}</echo>
+		<echo>    $serverAlias    => ${serverAlias}</echo>
+		
 		
         <replace file="${vhostConfPath}" token="$serverHostname" value="${baseHostname}.local"/>
 		<replace file="${vhostConfPath}" token="$clientHostname" value="${clientSubdomain}.${baseHostname}.local"/>
-        <replace file="${vhostConfPath}" token="$instancePath"   value="${instancePath}" />  
+        <replace file="${vhostConfPath}" token="$instancePath"   value="${instancePath}" />
+		<replace file="${vhostConfPath}" token="$serverAlias"    value="${serverAlias}" />  
         
         <echo>chown ${username} ${vhostConfPath}:</echo>       
         <chown file="${vhostConfPath}" owner="${username}"/>
