@@ -19,6 +19,7 @@ p("fire 2 jobId: $id");
 $ids[] = $id;
 
 p($job->block('im a blocking job'), "result of blocking job");
+p($job->block(), "result of blocking job with NO ARGUMENTS");
 
 foreach ($ids as $jobId) {
     p ($job->getResult($jobId), "result for $jobId");
