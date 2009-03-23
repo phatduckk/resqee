@@ -215,7 +215,7 @@ abstract class Resqee_Job
                 $jobServer = null;
 
                 throw new Resqee_Exception_Socket(
-                    socket_strerror(socket_last_error()),
+                    "{$jobServer['host']}: " . socket_strerror(socket_last_error()),
                     socket_last_error()
                 );
             }
@@ -253,7 +253,9 @@ abstract class Resqee_Job
     {
         $jobId = (! $jobId) ? $this->lastJobId : $jobId;
 
-        if (isset($this->responses[$jobId])) {
+        if ($jobId == null) {
+            throw new Resqee_Exception("Invalid jobId: {$jobId}");
+        } else if (isset($this->responses[$jobId])) {
             return $this->responses[$jobId]->getResult();
         }
 
@@ -281,6 +283,58 @@ abstract class Resqee_Job
         } else {
             return $this->responses[$jobId]->getResult();
         }
+    }
+
+    /**
+     * Get all responses
+     *
+     * @array
+     */
+    public function getResponses()
+    {
+        return $this->responses;
+    }
+
+    /**
+     * The the response for a job by its jobId
+     *
+     * If you don't pass in a jobId we'll try to get the response of the job
+     *  that ran last.
+     *
+     * @param string $jobId The ID of the job you want the response for. If you
+     *  don't pass in a $jobId we'll return the response for the last job
+     *
+     * @return Resqee_Response The response
+     */
+    public function getResponse($jobId = null)
+    {
+        $jobId = ($jobId) ? $jobId : $this->lastJobId;
+
+        if (! isset($this->responses[$jobId])) {
+            $this->getResult($jobId);
+        }
+
+        return $this->responses[$jobId];
+    }
+
+    /**
+     * Run a job and block untill the result if available
+     *
+     * @args mixed [mixed $... ] Any number of variables of any type. Any arguemnt
+     *  you pass in will be used when calling you class' run() method on the server.
+     *
+     * @return mixed The result of your job's run() method
+     */
+    public function block()
+    {
+        $args  = (func_num_args()) ? func_get_args() : null;
+        $jobId = ($args)
+            ? call_user_func_array(array($this, 'queue'), $args)
+            : $this->queue();
+
+        $result = $this->getResult($jobId);
+
+        return $result;
     }
 }
 

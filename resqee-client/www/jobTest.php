@@ -57,12 +57,13 @@ if (! empty($_GET['resultMode'])) {
 
     if (isset($_GET['async'])) {
         p($job->fire(), "The jobs uuid");
-    }
-
-    try {
-        p($job->getResult(), "Result. The job is returning: {$_GET['resultMode']}");
-    } catch (Exception $e) {
-        p($e, "the job threw an exception and we carried it over to the client");
+        p($job->getResult(), "The result of the async job");
+    } else {
+        try {
+            p($job->block(), "Result. The job is returning: {$_GET['resultMode']}");
+        } catch (Exception $e) {
+            p($e, "the job threw an exception and we carried it over to the client");
+        }
     }
 
     p($job, "The whole job");
