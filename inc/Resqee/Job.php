@@ -309,6 +309,13 @@ abstract class Resqee_Job
         $responses       = unserialize(implode("\r\n\r\n", $parts));
         $this->responses = array_merge($this->responses, $responses);
 
+        // remove from execStack
+        if (! empty($responses)) {
+            foreach ($responses as $jobId => $v) {
+                unset($this->execStack[$jobId]);
+            }
+        }
+
         if (! isset($this->responses[$jobId])) {
             throw new Resqee_Exception("Invalid jobId: {$jobId}");
         } else if ($this->responses[$jobId]->getException() !== null) {

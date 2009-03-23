@@ -8,19 +8,32 @@ require_once 'Resqee/Job.php';
 $job = new TestJob();
 $ids = array();
 
-$id = $job->fire('something');
-p("something: $id");
+p('jobIds below', "calling fire twice");
+
+$id = $job->fire('fire 1');
+p("fire 1 jobId: $id");
 $ids[] = $id;
 
-$id = $job->fire('nothing');
-p("nothing: $id");
+$id = $job->fire('fire 2');
+p("fire 2 jobId: $id");
 $ids[] = $id;
+
+p($job->block('im a blocking job'), "result of blocking job");
 
 foreach ($ids as $jobId) {
-//    p($job->getResult($jobId), "result for $jobId");
     p ($job->getResult($jobId), "result for $jobId");
 }
 
-p($job->getResponses());
+p("", 'gonna queue 2 jobs and fire them');
+$ids = array();
+$ids[] = $job->queue("queued job 1");
+$ids[] = $job->queue("queued job 2");
+
+foreach ($ids as $jobId) {
+    p ($job->getResult($jobId), "result for queued job $jobId");
+}
+
+p($job, "the whole job");
+p($job->getResponses(), "all responses");
 
 ?>

@@ -54,7 +54,7 @@ class TestJob extends Resqee_Job
                 break;
             default       :
             case 'string' :
-                return "{$foo} resqee > resqueue";
+                return ($foo) ? "arg1 was: {$foo}" : 'no args';
 
         }
     }
