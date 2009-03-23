@@ -154,11 +154,11 @@ abstract class Resqee_Job
      */
     private function getJobServer()
     {
-        return Resqee_Config_Jobs::getServer($this);
+        $server = Resqee_Config_Jobs::getServer($this);
 
         if (! $server) {
             throw new Resqee_Exception(
-                'There are no servers configured to run this job. ' .
+                'There are no servers available to run this job. ' .
                 ' Add an entry for this job in <include_path>'
             );
         } else {
@@ -182,12 +182,12 @@ abstract class Resqee_Job
         $postData = Resqee::KEY_POST_JOB_CLASS_PARAM . '=' . get_class($this) .
                     '&' . Resqee::KEY_POST_JOB_PARAM . '=' . serialize($jobs);
 
-        $this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-        $jobServer    = null;
+        $jobServer = null;
 
         while ($jobServer == null) {
             try {
                 $jobServer = $this->getJobServer();
+                $this->socket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
             } catch (Resqee_Exception $e) {
                 throw $e;
             }
@@ -195,12 +195,10 @@ abstract class Resqee_Job
             // failed creating a socket. disable the server
             if ($this->socket === false) {
                 Resqee_Config_Jobs::disableServer($jobServer);
-                $jobServer = null;
+                socket_close($this->socket);
 
-                throw new Resqee_Exception_Socket(
-                    socket_strerror(socket_last_error()),
-                    socket_last_error()
-                );
+                $this->socket = $jobServer = null;
+                continue;
             }
 
             $res = @socket_connect(
@@ -212,12 +210,10 @@ abstract class Resqee_Job
             // failed connecting to the socket
             if ($res === false) {
                 Resqee_Config_Jobs::disableServer($jobServer);
-                $jobServer = null;
+                socket_close($this->socket);
 
-                throw new Resqee_Exception_Socket(
-                    "{$jobServer['host']}: " . socket_strerror(socket_last_error()),
-                    socket_last_error()
-                );
+                $this->socket = $jobServer = null;
+                continue;
             }
         }
 
@@ -261,6 +257,12 @@ abstract class Resqee_Job
 
         if (isset($this->queue[$jobId])) {
             $this->execQueuedJobs();
+        }
+
+        if (! $this->socket) {
+            throw new Resqee_Exception('
+                Could not establish a connection to any servers.
+            ');
         }
 
         $res = $b = null;
