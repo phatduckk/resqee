@@ -47,6 +47,13 @@ abstract class Resqee_Persistence
      */
     public abstract function findJobs(Resqee_Persistence_SearchParams $params);
 
+    /**
+     * Remove a job from the queue
+     *
+     * @param unknown_type $jobId
+     */
+    public abstract function dequeue($jobId);
+
 }
 
 ?>

@@ -1,6 +1,8 @@
 <?php
 
 require_once 'Resqee/Persistence.php';
+require_once 'Resqee/Persistence/Item.php';
+require_once 'Resqee/Persistence/SearchParams.php';
 
 class Resqee_Persistence_MySQL extends Resqee_Persistence_Item
 {
@@ -10,14 +12,6 @@ class Resqee_Persistence_MySQL extends Resqee_Persistence_Item
      * @var resouce
      */
     private static $db = null;
-
-    /**
-     * Constructor
-     *
-     */
-    public function __construct()
-    {
-    }
 
     /**
      * Get a MySQL DB resource
@@ -146,8 +140,10 @@ class Resqee_Persistence_MySQL extends Resqee_Persistence_Item
     public function dequeue($jobId)
     {
         $db  = self::getDb();
-        $sql = 'DELETE FROM queuedJobs WHERE jobId = '
-               . mysql_real_escape_string($jobId, $db);
+        $sql = 'DELETE
+                FROM jobs
+                WHERE jobId = ' . mysql_real_escape_string($jobId, $db) .
+               '    AND status = ' . Resqee_Persistence_Item::STATUS_QUEUED;
 
         if (! mysql_query($sql, $db)) {
             throw new Resqee_Exception_Persistence(
@@ -159,9 +155,57 @@ class Resqee_Persistence_MySQL extends Resqee_Persistence_Item
         return true;
     }
 
+    /**
+     * Find jobs based on the $params that where passed in.
+     *
+     * This is a pretty naive & crappy function... just like the rest of this class
+     *
+     * @param Resqee_Persistence_SearchParams $params
+     *
+     * @return whatever
+     */
     public function findJobs(Resqee_Persistence_SearchParams $params)
     {
+        $db     = self::getDb();
+        $where  = array();
+        $fields = get_object_vars($params);
 
+        foreach ($fields as $field => $value) {
+            if ($value == null || $field == 'offset' || $field == 'limit') {
+                continue;
+            } else if (preg_match('/\W/', $field)) {
+                throw new Resqee_Exception_Persistence(
+                    "Could not perform search: {$field} is not a value column name"
+                );
+            }
+
+            $matches = array();
+            if (preg_match('/^(min|max)(Request|Response)Time$/', $field, $matches)) {
+                $value = (int) $value;
+                if ($matches[1] == 'min') {
+                    $where[] = strtolower($matches[2]) . " >= FROM_UNIXTIME($value) ";
+                } else {
+                    $where[] = strtolower($matches[2]) . " <= FROM_UNIXTIME($value) ";
+                }
+            } else {
+                $where[] = (is_numeric($value))
+                    ? "$field = $value"
+                    : "$field = " . mysql_real_escape_string($value, $db);
+            }
+        }
+
+        $sql      = 'SELECT * FROM jobs where ' . implode(' AND ', $where);
+        $countSql = 'SELECT count(*) FROM jobs where ' . implode(' AND ', $where);
+
+        if (isset($params->limit, $params->offset)) {
+            $sql .= ' LIMIT ' . (int) $params->limit
+                 .  ' OFFSET ' . (int) $params->offset;
+        } else if (isset($params->limit)) {
+            $sql .= ' LIMIT ' . (int) $params->limit;
+        } else if (isset($params->offset)) {
+            $sql .= ' LIMIT ' . Resqee_Persistence_SearchParams::MAX_RESULTS
+                 .  ' OFFSET ' . (int) $params->offset;
+        }
     }
 }
 

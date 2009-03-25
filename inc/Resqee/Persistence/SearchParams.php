@@ -3,6 +3,15 @@
 class Resqee_Persistence_SearchParams
 {
     /**
+     * Maximum # of results to fetch at a time
+     *
+     * Huge number
+     *
+     * @var int
+     */
+    const MAX_RESULTS = 1000000;
+
+    /**
      * Error state to query on.
      *
      * The options should be:
