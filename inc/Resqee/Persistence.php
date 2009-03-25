@@ -1,36 +1,11 @@
 <?php
 
 require_once 'Resqee/Exception/Persistence.php';
+require_once 'Resqee/Persistence/Item.php';
+require_once 'Resqee/Persistence/SearchParams.php';
 
 abstract class Resqee_Persistence
 {
-    /**
-     * const for a completed job w/o exception
-     *
-     * This is used when a job is completed. It has no bearing on
-     * whether there were any PHP errors or not. However all these jobs should
-     * NOT have thrown an exception
-     *
-     * @var int
-     */
-    const STATUS_COMPLETE_OK = '1';
-
-    /**
-     * const for failed jobs
-     *
-     * The job has completed but threw an exception
-     *
-     * @var int
-     */
-    const STATUS_COMPLETE_FAILED = '2';
-
-    /**
-     * const for queued job
-     *
-     * @var int
-     */
-    const STATUS_QUEUED = '4';
-
     /**
      * Abstract method that queues a job in the persistant store
      *
@@ -60,11 +35,13 @@ abstract class Resqee_Persistence
      * @param Resqee_Persistence_SearchParams $params Search parameters
      *
      * @return array The method must return an array with 2 fields: jobs & total
-     *  the 'jobs' index must return an array Resqee_Persistence_
+     *  the 'jobs' index must contain an array Resqee_Persistence_Item objects and
+     *  the 'total' field must contain the total # of jobs that matched the criteria
+     *
      *  <code>
      *      array(
-     *          'requests' => $foundJobs,
-     *          'total'    => $numResultsWithoutOffsetAndLimit
+     *          'jobs'  => $foundJobs,
+     *          'total' => $numResultsWithoutOffsetAndLimit
      *      );
      *  </code>
      */

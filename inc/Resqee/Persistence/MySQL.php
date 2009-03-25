@@ -2,7 +2,7 @@
 
 require_once 'Resqee/Persistence.php';
 
-class Resqee_Persistence_MySQL extends Resqee_Persistence
+class Resqee_Persistence_MySQL extends Resqee_Persistence_Item
 {
     /**
      * A MySQL DB handle
@@ -53,7 +53,7 @@ class Resqee_Persistence_MySQL extends Resqee_Persistence
         $sql = vsprintf(
                     $sql,
                     array(
-                        Resqee_Persistence::STATUS_QUEUED,
+                        Resqee_Persistence_Item::STATUS_QUEUED,
                         mysql_real_escape_string($item->jobId),
                         mysql_real_escape_string($item->job),
                         mysql_real_escape_string($item->args),
@@ -91,8 +91,8 @@ class Resqee_Persistence_MySQL extends Resqee_Persistence
             'hasStdout'    => (int) ($response->getStdout() != null),
             'hasErrors'    => (int) ($response->getErrors() != null),
             'status'       => (int) ($response->getException() == null)
-                ? Resqee_Persistence::STATUS_COMPLETE_OK
-                : Resqee_Persistence::STATUS_COMPLETE_FAILED
+                ? Resqee_Persistence_Item::STATUS_COMPLETE_OK
+                : Resqee_Persistence_Item::STATUS_COMPLETE_FAILED
         );
 
         $queryParts = array('responseTime = FROM_UNIXTIME(' . $response->getResponseTime() . ')');

@@ -6,29 +6,14 @@ require_once 'config.php';
 require_once 'Resqee/Job.php';
 require_once 'Resqee/Persistence/MySQL.php';
 
-//$persist    = new Resqee_Persistence_MySQL();
-//$persist->getJobClassId("arin");
-//
-//            $persist->queue(
-//              md5(microtime()),
-//               2,
-//                3,
-//                3,
-//                9
-//            );
-//exit;
-
 $job = new TestJob();
 $ids = array();
-
-
 
 p('jobIds below', "calling fire twice");
 
 $id = $job->fire("fire 1 & \"quote me\" \ ");
 
 //p($job->getResponse($id));
-exit;
 p("fire 1 jobId: $id");
 $ids[] = $id;
 

@@ -18,9 +18,9 @@ class Resqee_Persistence_SearchParams
      * The job status to query on
      *
      * The options should be
-     *  Resqee_Persistence::STATUS_QUEUED   => get queued jobs
-     *  Resqee_Persistence::STATUS_COMPLETE => get completed jobs
-     *  Resqee_Persistence::STATUS_FAILED   => get jobs that had exceptions
+     *  Resqee_Persistence_Item::STATUS_QUEUED   => get queued jobs
+     *  Resqee_Persistence_Item::STATUS_COMPLETE => get completed jobs
+     *  Resqee_Persistence_Item::STATUS_FAILED   => get jobs that had exceptions
      *
      * @var int
      */
