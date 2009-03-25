@@ -14,6 +14,8 @@ php_value memory_limit 250M
     CustomLog "$instancePath/resqee-server/logs/error.log" common
     
     php_value error_log $instancePath/resqee-server/logs/php_error.log
+    php_value error_reporting 6143
+    php_flag display_errors on
     php_value include_path $instancePath/jobs-include_path:$instancePath/inc:$instancePath/resqee-server/templates       
 </VirtualHost>
 
@@ -31,6 +33,7 @@ php_value memory_limit 250M
     ErrorLog "$instancePath/resqee-client/logs/error.log"
     CustomLog "$instancePath/resqee-client/logs/error.log" common
     
+    php_value error_reporting 6143
     php_value include_path $instancePath/inc:.:$instancePath/jobs-include_path:
     php_value error_log $instancePath/resqee-client/logs/php_error.log
 </VirtualHost>

@@ -203,7 +203,7 @@ abstract class Resqee_Job
         }
 
         $postData = Resqee::KEY_POST_JOB_CLASS_PARAM . '=' . get_class($this) .
-                    '&' . Resqee::KEY_POST_JOB_PARAM . '=' . serialize($jobs);
+                    '&' . Resqee::KEY_POST_JOB_PARAM . '=' . urlencode(serialize($jobs));
 
         $forceServer = $jobServer = null;
 

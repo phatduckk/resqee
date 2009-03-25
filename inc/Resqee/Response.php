@@ -220,6 +220,16 @@ class Resqee_Response
     }
 
     /**
+     * Get $output
+     *
+     * @return string
+     */
+    public function getStdout()
+    {
+        return $this->stdout;
+    }
+
+    /**
      * Add any php errors to $this->errors
      *
      * @param array $err An error message

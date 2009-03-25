@@ -1,6 +1,7 @@
 <?php
 
 require_once 'Resqee/JobRunner.php';
+require_once 'Resqee/Persistence/MySQL.php';
 
 class Resqee_Controller_Job extends Resqee_Controller
 {
@@ -60,8 +61,9 @@ class Resqee_Controller_Job extends Resqee_Controller
             throw new Resqee_Exception("Could not load job class");
         }
 
+        $persist    = new Resqee_Persistence_MySQL();
         $responses  = array();
-        $serialized = stripslashes($_POST[Resqee::KEY_POST_JOB_PARAM]);
+        $serialized = stripslashes(urldecode($_POST[Resqee::KEY_POST_JOB_PARAM]));
         $jobs       = unserialize($serialized);
 
         foreach ($jobs as $jobId => $jobData) {
@@ -75,6 +77,15 @@ class Resqee_Controller_Job extends Resqee_Controller
 
             $args = unserialize($jobData[Resqee::KEY_POST_JOB_ARGS_PARAM]);
 
+            $persist->queue(
+                $jobId,
+                $jobData[Resqee::KEY_POST_JOB_PARAM],
+                $jobData[Resqee::KEY_POST_JOB_ARGS_PARAM],
+                get_class($job),
+                get_parent_class($job),
+                $this->serverGlobal['REQUEST_TIME']
+            );
+
             $runner = new Resqee_JobRunner(
                 $job,
                 $args,
@@ -82,6 +93,10 @@ class Resqee_Controller_Job extends Resqee_Controller
             );
 
             $responses[$jobData[Resqee::KEY_POST_JOB_ID_PARAM]] = $runner->getResponse();
+        }
+
+        foreach ($responses as $jobId => $response) {
+            $persist->completeJob($jobId, $response);
         }
 
         echo serialize($responses);
