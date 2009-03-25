@@ -62,6 +62,7 @@ class Resqee_Controller_Job extends Resqee_Controller
             throw new Resqee_Exception("Could not load job class");
         }
 
+        // TODO: instanciate class specified in config file
         $persist    = new Resqee_Persistence_MySQL();
         $responses  = array();
         $serialized = stripslashes(urldecode($_POST[Resqee::KEY_POST_JOB_PARAM]));
@@ -76,7 +77,11 @@ class Resqee_Controller_Job extends Resqee_Controller
                 );
             }
 
-            $args = unserialize($jobData[Resqee::KEY_POST_JOB_ARGS_PARAM]);
+            // don't bother unserializing nulls
+            $args = ('N;' != $jobData[Resqee::KEY_POST_JOB_ARGS_PARAM])
+                ? unserialize($jobData[Resqee::KEY_POST_JOB_ARGS_PARAM])
+                : null;
+
             $item = new Resqee_Persistence_Item();
 
             $item->jobId       = $jobId;
