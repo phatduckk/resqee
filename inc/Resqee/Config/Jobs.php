@@ -86,7 +86,10 @@ class Resqee_Config_Jobs extends Resqee_Config
 
         if (empty($this->config)) {
             $this->parseConfig($this->getConfigFile());
-            apc_add(self::APC_KEY_CONFIG, $this->config, self::APC_TTL_CONFIG);
+            
+            if (self::$isAPCEnabled) {
+                apc_add(self::APC_KEY_CONFIG, $this->config, self::APC_TTL_CONFIG);
+            }
         }
     }
 
@@ -204,7 +207,7 @@ class Resqee_Config_Jobs extends Resqee_Config
 
         return (
             isset(self::$disabledServers[$hostAndPort])
-            || apc_fetch(self::APC_KEY_SERVER_DISABLED . $hostAndPort)
+            || (self::$isAPCEnabled && apc_fetch(self::APC_KEY_SERVER_DISABLED . $hostAndPort))
         );
     }
 
@@ -270,10 +273,10 @@ class Resqee_Config_Jobs extends Resqee_Config
             $matches = array();
 
             // check to see if we have a port
-            if (preg_match('/^([\w\._-]+)\:(\d+)$/', $host, $matches)) {
+            if (preg_match('/^([\w\._-]+)(\:|_port_|\*)(\d+)$/', $host, $matches)) {
                 $info = array(
                     'host' => $matches[1],
-                    'port' => $matches[2]
+                    'port' => $matches[3]
                 );
             } else {
                 $info = array(

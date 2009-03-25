@@ -9,7 +9,7 @@ function p($x, $str = null)
 {
     if ($str) echo "<h2>$str</h2>";
     echo '<pre>';
-    var_dump($x);
+    print_r($x);
     echo '</pre>';
     echo '<hr />';
 }
