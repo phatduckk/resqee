@@ -195,7 +195,7 @@ class Resqee_Persistence_MySQL extends Resqee_Persistence_Item
         }
 
         $sql      = 'SELECT * FROM jobs where ' . implode(' AND ', $where);
-        $countSql = 'SELECT count(*) FROM jobs where ' . implode(' AND ', $where);
+        $countSql = 'SELECT count(*) as num FROM jobs where ' . implode(' AND ', $where);
 
         if (isset($params->limit, $params->offset)) {
             $sql .= ' LIMIT ' . (int) $params->limit
@@ -206,6 +206,20 @@ class Resqee_Persistence_MySQL extends Resqee_Persistence_Item
             $sql .= ' LIMIT ' . Resqee_Persistence_SearchParams::MAX_RESULTS
                  .  ' OFFSET ' . (int) $params->offset;
         }
+
+        $res   = mysql_query($countSql, $db);
+        $row   = mysql_fetch_array($res);
+        $num   = $row[0];
+        $items = array();
+
+        if ($num != 0) {
+            $res = mysql_query($sql, $db);
+            while ($row = mysql_fetch_object($res, 'Resqee_Persistence_Item')) {
+                $items[] = $row;
+            }
+        }
+
+
     }
 }
 
