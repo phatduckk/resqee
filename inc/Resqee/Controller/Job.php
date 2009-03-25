@@ -2,6 +2,7 @@
 
 require_once 'Resqee/JobRunner.php';
 require_once 'Resqee/Persistence/MySQL.php';
+require_once 'Resqee/Persistence/Item.php';
 
 class Resqee_Controller_Job extends Resqee_Controller
 {
@@ -76,15 +77,16 @@ class Resqee_Controller_Job extends Resqee_Controller
             }
 
             $args = unserialize($jobData[Resqee::KEY_POST_JOB_ARGS_PARAM]);
+            $item = new Resqee_Persistence_Item();
 
-            $persist->queue(
-                $jobId,
-                $jobData[Resqee::KEY_POST_JOB_PARAM],
-                $jobData[Resqee::KEY_POST_JOB_ARGS_PARAM],
-                get_class($job),
-                get_parent_class($job),
-                $this->serverGlobal['REQUEST_TIME']
-            );
+            $item->jobId       = $jobId;
+            $item->job         = $jobData[Resqee::KEY_POST_JOB_PARAM];
+            $item->args        = $jobData[Resqee::KEY_POST_JOB_ARGS_PARAM];
+            $item->class       = get_class($job);
+            $item->parentClass = get_parent_class($job);
+            $item->requestTime = $this->serverGlobal['REQUEST_TIME'];
+
+            $persist->queue($item);
 
             $runner = new Resqee_JobRunner(
                 $job,

@@ -39,16 +39,11 @@ class Resqee_Persistence_MySQL extends Resqee_Persistence
      *
      * A Resqee_Exception_Persistence is thrown on failure
      *
-     * @param string $jobId          The jobId
-     * @param string $job            The serialized job
-     * @param string $args           The serialized arguments to the run() method
-     * @param string $jobClass       The class of the job
-     * @param string $jobParentClass The class of the job
-     * @param int    $requestTime    Unitxtime of the request
+     * @param Resqee_Persistence_Item $item A Resqee_Persistence_Item
      *
      * @return bool TRUE on success
      */
-    public function queue($jobId, $job, $args, $jobClass, $jobParentClass, $requestTime)
+    public function queue(Resqee_Persistence_Item $item)
     {
         $db  = self::getDb();
         $sql = 'INSERT
@@ -59,12 +54,12 @@ class Resqee_Persistence_MySQL extends Resqee_Persistence
                     $sql,
                     array(
                         Resqee_Persistence::STATUS_QUEUED,
-                        mysql_real_escape_string($jobId),
-                        mysql_real_escape_string($job),
-                        mysql_real_escape_string($args),
-                        $requestTime,
-                        $this->getJobClassId($jobClass),
-                        $this->getJobClassId($jobParentClass)
+                        mysql_real_escape_string($item->jobId),
+                        mysql_real_escape_string($item->job),
+                        mysql_real_escape_string($item->args),
+                        $item->requestTime,
+                        $this->getJobClassId($item->class),
+                        $this->getJobClassId($item->parentClass)
                     )
                 );
 
@@ -96,8 +91,8 @@ class Resqee_Persistence_MySQL extends Resqee_Persistence
             'hasStdout'    => (int) ($response->getStdout() != null),
             'hasErrors'    => (int) ($response->getErrors() != null),
             'status'       => (int) ($response->getException() == null)
-                ? Resqee_Persistence::STATUS_SUCCESS
-                : Resqee_Persistence::STATUS_FAILED
+                ? Resqee_Persistence::STATUS_COMPLETE_OK
+                : Resqee_Persistence::STATUS_COMPLETE_FAILED
         );
 
         $queryParts = array('responseTime = FROM_UNIXTIME(' . $response->getResponseTime() . ')');
@@ -162,6 +157,11 @@ class Resqee_Persistence_MySQL extends Resqee_Persistence
         }
 
         return true;
+    }
+
+    public function findJobs(Resqee_Persistence_SearchParams $params)
+    {
+
     }
 }
 
