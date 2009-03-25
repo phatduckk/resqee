@@ -50,16 +50,6 @@ class Resqee_Response
     private $errors = array();
 
     /**
-     * const for status code key in $status
-     */
-    const STATUS_CODE = 'code';
-
-    /**
-     * const for status code messahe in $status
-     */
-    const STATUS_MESSAGE = 'message';
-
-    /**
      * const for unixtime of the request in $status
      */
     const STATUS_REQUEST_TIME = 'requestTime';
@@ -73,7 +63,7 @@ class Resqee_Response
      * const used as key in $status to represent how many seconds a job took
      *
      */
-    const EXEC_MS = 'ms';
+    const STATUS_EXEC_MS = 'ms';
 
     /**
      * Result of the job as serialized PHP
@@ -129,13 +119,43 @@ class Resqee_Response
     }
 
     /**
+     * Get the request time in unixtime format
+     *
+     * @return int
+     */
+    public function getRequestTime()
+    {
+        return $this->status[self::STATUS_REQUEST_TIME];
+    }
+
+    /**
+     * Get response time in unixtime format
+     *
+     * @return int
+     */
+    public function getResponseTime()
+    {
+        return $this->status[self::STATUS_REQUEST_TIME];
+    }
+
+    /**
+     * Get the # of miliseconds it took to run the job
+     *
+     * @return float
+     */
+    public function getExecMs()
+    {
+        return $this->status[self::STATUS_EXEC_MS];
+    }
+
+    /**
      * Set $status['execSeconds']
      *
      * @param float $seconds
      */
     public function setExecTime($seconds)
     {
-        $this->status[self::EXEC_MS] = round($seconds * 1000, 4);
+        $this->status[self::STATUS_EXEC_MS] = round($seconds * 1000, 4);
     }
 
     /**
