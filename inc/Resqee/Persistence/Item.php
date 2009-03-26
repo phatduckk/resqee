@@ -113,6 +113,48 @@ class Resqee_Persistence_Item
      */
     public $parentClass;
 
+    /**
+     * The unserialized arguments to the job
+     *
+     * @var array
+     */
+    private $_args = null;
+
+    /**
+     * The unserialized job
+     *
+     * @var Resqee_Job
+     */
+    private $_job = null;
+
+    /**
+     * Get the unserialized arguments to the job
+     *
+     * @return array
+     */
+    public function getArgs()
+    {
+        if (!isset($this->_args)) {
+            $this->_args = unserialize($this->args);
+        }
+
+        return $this->_args;
+    }
+
+    /**
+     * Get the unserialized job
+     *
+     * @return Resqee_job
+     */
+    public function getJob()
+    {
+        if (!isset($this->_job)) {
+            $this->_job = unserialize($this->job);
+        }
+
+        return $this->_job;
+    }
+
 }
 
 ?>

@@ -2,7 +2,9 @@
 
 require_once 'Resqee/Persistence.php';
 require_once 'Resqee/Persistence/Item.php';
+require_once 'Resqee/Exception/Persistence.php';
 require_once 'Resqee/Persistence/SearchParams.php';
+require_once 'Resqee/Persistence/SearchResults.php';
 
 class Resqee_Persistence_MySQL extends Resqee_Persistence_Item
 {
@@ -171,7 +173,8 @@ class Resqee_Persistence_MySQL extends Resqee_Persistence_Item
         $fields = get_object_vars($params);
 
         foreach ($fields as $field => $value) {
-            if ($value == null || $field == 'offset' || $field == 'limit') {
+            if ($value == null || $field == 'offset'
+                || $field == 'limit' || $field == 'isSearchParentClass') {
                 continue;
             } else if (preg_match('/\W/', $field)) {
                 throw new Resqee_Exception_Persistence(
@@ -219,7 +222,7 @@ class Resqee_Persistence_MySQL extends Resqee_Persistence_Item
             }
         }
 
-
+        return new Resqee_Persistence_SearchResults($params, $num, $items);
     }
 }
 

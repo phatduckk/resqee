@@ -9,7 +9,7 @@ class Resqee_Persistence_SearchParams
      *
      * @var int
      */
-    const MAX_RESULTS = 1000000;
+    const MAX_LIMIT = 1000;
 
     /**
      * Error state to query on.
@@ -124,7 +124,7 @@ class Resqee_Persistence_SearchParams
      *
      * @var int
      */
-    public $limit = 50;
+    public $limit = self::MAX_LIMIT;
 }
 
 ?>

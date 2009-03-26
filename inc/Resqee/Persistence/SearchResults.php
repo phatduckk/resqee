@@ -8,14 +8,14 @@ implements Countable, ArrayAccess, IteratorAggregate
      *
      * @var int
      */
-    public $total = 0;
+    private $total = 0;
 
     /**
      * The resulting Resqee_Persistence_Item objects
      *
      * @var ArrayObject
      */
-    public $items = null;
+    private $items = null;
 
     /**
      * Iterator
@@ -25,16 +25,53 @@ implements Countable, ArrayAccess, IteratorAggregate
     private $iter = null;
 
     /**
+     * Total # of pages of results
+     *
+     * Indexed by 1
+     *
+     * @var int
+     */
+    private $numPages = 0;
+
+    /**
+     * Current page
+     *
+     * Indexed by 1
+     *
+     * @var int
+     */
+    private $currentPage = 0;
+
+    /**
+     * # of results per page
+     *
+     * @var it
+     */
+    private $limit = 0;
+
+    /**
+     * Last index in the iterator
+     *
+     * @var int
+     */
+    private $lastIndex = 0;
+
+    /**
      * Constructor
      *
      * @param int   $total Total @ of results w/o pagination bounds
      * @param array $items An array of Resqee_Persistence_Item items
      */
-    public function __construct($total = 0, array $items = array())
+    public function __construct(Resqee_Persistence_SearchParams $params,
+        $total = 0, array $items = array())
     {
-        $this->items = new ArrayObject($items);
-        $this->total = $total;
-        $this->iter  = $this->items->getIterator();
+        $this->total       = $total;
+        $this->limit       = $params->limit;
+        $this->items       = new ArrayObject($items);
+        $this->iter        = $this->items->getIterator();
+        $this->numPages    = (int) ceil($total / $params->limit);
+        $this->currentPage = (int) floor($params->offset / $params->limit) + 1;
+        $this->lastIndex   = ($this->count() > 0);
     }
 
     /**
@@ -64,7 +101,7 @@ implements Countable, ArrayAccess, IteratorAggregate
      *
      * @param int offset The offset
      *
-     * @return mixed
+     * @return Resqee_Persistence_Item
      */
     public function offsetGet($offset)
     {
@@ -101,5 +138,108 @@ implements Countable, ArrayAccess, IteratorAggregate
     {
         return count($this->items);
     }
+
+    /**
+     * Get the # of pges of results
+     *
+     * @return int
+     */
+    public function getNumPages()
+    {
+        return $this->numPages;
+    }
+
+    /**
+     * Get total # of results
+     *
+     * Not bounded by pagination constraints
+     *
+     * @return int
+     */
+    public function getTotal()
+    {
+        return $this->total;
+    }
+
+    /**
+     * Get the current page #
+     *
+     * Indexed by 1
+     *
+     * @return int
+     */
+    public function getCurrentPage()
+    {
+        return $this->currentPage;
+    }
+
+    /**
+     * Get the # of results per page
+     *
+     * @return int
+     */
+    public function getLimit()
+    {
+        return $this->limit;
+    }
+
+    /**
+     * Check if the current position in the iterator is even
+     *
+     * @return bool
+     */
+    public function isEven()
+    {
+        return $this->nth(2);
+    }
+
+    /**
+     * Check is the current position in the iterator is devisable by $n
+     *
+     * @param int $n
+     *
+     * @return bool
+     */
+    public function nth($n)
+    {
+        $c = $this->iter->key() + 1;
+        return($c) ?($c %($n) === 0) : false;
+    }
+
+    /**
+     * Check if the current position in the iterator is odd
+     *
+     * @return bool
+     */
+    public function isOdd()
+    {
+        return ! $this->isEven();
+    }
+
+    public function getOddEven()
+    {
+        return($this->even()) ? self::EVEN : self::ODD;
+    }
+
+    /**
+     * Check if we're at the last position in the iterator
+     *
+     * @return bool
+     */
+    public function isLast()
+    {
+        return($this->iter->key() === $this->lastIndex);
+    }
+
+    /**
+     * Check if we're at the first position in the iterator
+     *
+     * @return bool
+     */
+    public function isFirst()
+    {
+        return($this->iter->key() === 0);
+    }
+
 }
 ?>
