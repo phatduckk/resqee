@@ -5,13 +5,6 @@ require_once 'Resqee/Config.php';
 class Resqee_Config_Jobs extends Resqee_Config
 {
     /**
-     * Name of the config file that says which servers can handle which jobs
-     *
-     * @var string
-     */
-    const CONFIG_FILE = 'resqee-jobs.ini';
-
-    /**
      * Key in the config array that holds the array of hosts that
      * can service all jobs
      *
@@ -20,40 +13,11 @@ class Resqee_Config_Jobs extends Resqee_Config
     const ALL = 'Resqee_Job';
 
     /**
-     * const used to fetch/add the config array in APC
-     *
-     * @var string
-     */
-    const APC_KEY_CONFIG = 'RESQEE_CONFIG_JOB_APC_KEY_CONFIG';
-
-    /**
-     * Base key for use in APC for a disabled server flag
-     *
-     * @var string
-     */
-    const APC_KEY_SERVER_DISABLED = 'APC_KEY_SERVER_DISABLED.';
-
-    /**
-     * const to determine how long we store the config in apc
-     *
-     * @var string
-     */
-    // TODO: maybe make this configurable
-    const APC_TTL_CONFIG = 300;
-
-    /**
      * How long we want to disable a server for in APC
      *
      * @var string
      */
     const APC_TTL_DISABLE_SERVER = self::APC_TTL_CONFIG;
-
-    /**
-     * Whether or not apc extension is enabled
-     *
-     * @var bool
-     */
-    private static $isAPCEnabled = false;
 
     /**
      * A list of disabled servers
@@ -73,24 +37,7 @@ class Resqee_Config_Jobs extends Resqee_Config
      */
     protected function __construct()
     {
-        $keySuffix          = (PHP_SAPI == 'cli') ? '_cli' : '';
-        self::$isAPCEnabled = ini_get('apc.enabled' . $keySuffix);
-
-        if (self::$isAPCEnabled) {
-            $config = apc_fetch(self::APC_KEY_CONFIG);
-
-            if ($config !== false) {
-                $this->config = $config;
-            }
-        }
-
-        if (empty($this->config)) {
-            $this->parseConfig($this->getConfigFile());
-            
-            if (self::$isAPCEnabled) {
-                apc_add(self::APC_KEY_CONFIG, $this->config, self::APC_TTL_CONFIG);
-            }
-        }
+        parent::__construct();
     }
 
     /**
@@ -100,7 +47,7 @@ class Resqee_Config_Jobs extends Resqee_Config
      */
     public function getConfigFile()
     {
-        return self::CONFIG_FILE;
+        return 'resqee-jobs.ini';
     }
 
     /**
@@ -207,7 +154,7 @@ class Resqee_Config_Jobs extends Resqee_Config
 
         return (
             isset(self::$disabledServers[$hostAndPort])
-            || (self::$isAPCEnabled && apc_fetch(self::APC_KEY_SERVER_DISABLED . $hostAndPort))
+            || (Resqee::isAPCEnabled() && apc_fetch(self::APC_KEY_SERVER_DISABLED . $hostAndPort))
         );
     }
 
@@ -253,6 +200,8 @@ class Resqee_Config_Jobs extends Resqee_Config
                 $this->addJob(self::ALL, $k, $v);
             }
         }
+
+        return $this->config;
     }
 
     /**

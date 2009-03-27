@@ -38,12 +38,13 @@ class Resqee
      * @var string
      */
     const KEY_POST_JOB_CLASS_PARAM = 'REQSEE_JOB_CLASS';
-    
-    const SERVER_PLUGIN_JOB_RUN_BEFORE = 2;
-    
-    const SERVER_PLUGIN_JOB_RUN_AFTER = 3;    
-    
-    const SERVER_PLUGIN_JOB_RUN_BOTH = 1;
+
+    /**
+     * Is APC enabled?
+     *
+     * @var bool
+     */
+    private static $isAPCEnabled = null;
 
     /**
      * Load a class by name
@@ -74,6 +75,21 @@ class Resqee
         }
 
         return true;
+    }
+
+    /**
+     * Find out if APC is enabled
+     *
+     * @return bool
+     */
+    public static function isAPCEnabled()
+    {
+        if (self::$isAPCEnabled == null) {
+            $keySuffix          = (PHP_SAPI == 'cli') ? '_cli' : '';
+            self::$isAPCEnabled = ini_get('apc.enabled' . $keySuffix);
+        }
+
+        return self::$isAPCEnabled;
     }
 }
 
