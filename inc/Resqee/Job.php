@@ -230,6 +230,12 @@ abstract class Resqee_Job
                 continue;
             }
 
+//            socket_set_option(
+//                $this->sockets[$socketIndex],
+//                SO_SNDTIMEO,
+//                array('sec' => 0, 'usec' => 20000)
+//            );
+
             $res = @socket_connect(
                 $this->sockets[$socketIndex],
                 $jobServer['host'],
@@ -245,8 +251,6 @@ abstract class Resqee_Job
                 continue;
             }
         }
-
-        socket_set_block($this->sockets[$socketIndex]);
 
         $headers = array(
             "POST /job HTTP/1.1",

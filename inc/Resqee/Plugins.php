@@ -43,11 +43,23 @@ class Resqe_Plugins
     /**
      * Load plugins for a specific event
      *
-     * @param int $event
+     * @param array $events
      */
-    public static function load($event)
+    public static function load($events)
     {
-        $config = Resqee_Config::getInstance();
+        if (! is_array($events)) {
+            $events = array($event);
+        }
+
+        $config  = Resqee_Config::getInstance();
+        $plugins = array();
+
+        foreach ($plugins as $k => $v) {
+            if (! isset(self::$loaded[$k])) {
+                Resqee::loadClass($k);
+                $loaded[$k] = $v;
+            }
+        }
     }
 
     /**

@@ -127,7 +127,7 @@ class Resqee_Config_Jobs extends Resqee_Config
 
         self::$disabledServers[$hostAndPort] = true;
 
-        if (self::$isAPCEnabled) {
+        if (Resqee::isAPCEnabled()) {
             apc_add(
                 self::APC_KEY_SERVER_DISABLED . $hostAndPort,
                 true,

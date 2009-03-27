@@ -1,5 +1,7 @@
 <?php
 
+require_once 'Resqee/Plugins.php';
+
 class Resqee_Config
 {
     /**
