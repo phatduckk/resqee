@@ -2,10 +2,10 @@
 
 require_once 'config.php';
 require_once 'TestJob.php';
-require_once 'Resqee/Config/Server.php';
+require_once 'Resqee/Config.php';
 require_once 'Resqee.php';
 
-$c = Resqee_Config_Server::getInstance();
+$c = Resqee_Config::getInstance();
 
 p($c->getPlugins(), "all");
 p($c->getPlugins(2), "2");
