@@ -4,8 +4,37 @@ require_once 'Resqee/Exception/Persistence.php';
 require_once 'Resqee/Persistence/Item.php';
 require_once 'Resqee/Persistence/SearchParams.php';
 
-abstract class Resqee_Persistence
+abstract class Resqee_Persistence extends Resqee_Plugin
 {
+    /**
+     * Queue a job in some persistent store
+     *
+     * This runs before the job's run() method.
+     *
+     * @param Resqee_Persistence_Item $item The persistence item
+     *
+     * @return bool
+     */
+    public function before(Resqee_Persistence_Item $item)
+    {
+        return $this->queue($item);
+    }
+
+    /**
+     * Mark a job as completed in persistent store
+     *
+     * This will run after you job has been ran
+     *
+     * @param string          $jobId    The job'd id
+     * @param Resqee_Response $response The response to the client
+     *
+     * @return voids
+     */
+    public function after($jobId, Resqee_Response $response)
+    {
+        return $this->completeJob($jobId, $response);
+    }
+
     /**
      * Abstract method that queues a job in the persistant store
      *
