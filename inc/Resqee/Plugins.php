@@ -1,8 +1,9 @@
 <?php
 
+require_once 'Resqee.php';
 require_once 'Resqee/Config.php';
 
-class Resqe_Plugins
+class Resqee_Plugins
 {
     /**
      * Section name in resqee-server.ini for plugins
@@ -12,28 +13,6 @@ class Resqe_Plugins
     const KEY_PLUGINS = 'plugins';
 
     /**
-     * Const for server plugins that init before we run() a job
-     *
-     * @var int
-     */
-    const PLUGIN_EVENT_JOB_RUN_BEFORE = 2;
-
-    /**
-     * Const for server plugins that init after we run() a job
-     *
-     * @var int
-     */
-    const PLUGIN_EVENT_JOB_RUN_AFTER = 3;
-
-    /**
-     * Const for server plugins that init before and after we run() a job
-     *
-     * @var int
-     */
-    const PLUGIN_EVENT_JOB_RUN_BOTH = 1;
-
-
-    /**
      * Array holding a list of the plugins we've already loaded
      *
      * @var array
@@ -41,35 +20,17 @@ class Resqe_Plugins
     private static $loaded = array();
 
     /**
-     * Load plugins for a specific event
-     *
-     * @param array $events
-     */
-    public static function load($events)
-    {
-        if (! is_array($events)) {
-            $events = array($event);
-        }
-
-        $config  = Resqee_Config::getInstance();
-        $plugins = array();
-
-        foreach ($plugins as $k => $v) {
-            if (! isset(self::$loaded[$k])) {
-                Resqee::loadClass($k);
-                $loaded[$k] = $v;
-            }
-        }
-    }
-
-    /**
      * Get an array of plugins
      *
-     * @param string $event What event you want the plugin to be enabled for
+     * If $instanciate is true then the returned array will have instanciated
+     * plugin objects that are ready for use.
+     *
+     * @param string $event       What event you want the plugin to be enabled for
+     * @param bool   $instanciate Whether or not to instanciate the plugins
      *
      * @return array
      */
-    public static function getPlugins($event = null, $strict = false)
+    public static function getPlugins($event, $instanciate = true)
     {
         $config = Resqee_Config::getInstance()->getConfigSection(self::KEY_PLUGINS);
 
@@ -77,19 +38,16 @@ class Resqe_Plugins
             return array();
         }
 
-        if (! $event) {
-            return $config;
-        }
+        $rtn = array();
 
-        $rtn  = array();
-        $event = (int) $event;
-
-        foreach ($config as $k => $v) {
-            $v    = (int) $v;
-            $cond = (! $strict) ? ($v == $event) : false;
-
-            if ($v == $event || $cond) {
-                $rtn[$k] = $v;
+        foreach ($config as $pluginClass => $eventName) {
+            if ($event == $eventName) {
+                if ($instanciate) {
+                    Resqee::loadClass($pluginClass);
+                    $rtn[$pluginClass] = new $pluginClass();
+                } else {
+                    $rtn[] = $pluginClass;
+                }
             }
         }
 

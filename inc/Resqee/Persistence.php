@@ -1,5 +1,6 @@
 <?php
 
+require_once 'Resqee/Plugin.php';
 require_once 'Resqee/Exception/Persistence.php';
 require_once 'Resqee/Persistence/Item.php';
 require_once 'Resqee/Persistence/SearchParams.php';

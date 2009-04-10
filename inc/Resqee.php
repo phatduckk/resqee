@@ -84,6 +84,8 @@ class Resqee
      */
     public static function isAPCEnabled()
     {
+        return false;
+
         if (self::$isAPCEnabled == null) {
             $keySuffix          = (PHP_SAPI == 'cli') ? '_cli' : '';
             self::$isAPCEnabled = ini_get('apc.enabled' . $keySuffix);

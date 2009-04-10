@@ -62,8 +62,7 @@ class Resqee_Controller_Job extends Resqee_Controller
             throw new Resqee_Exception("Could not load job class");
         }
 
-        // TODO: instanciate class specified in config file
-        $persist    = new Resqee_Persistence_MySQL();
+        $plugins    = Resqee_Plugins::getPlugins(Resqee_Plugin_Events::SERVER_JOB_POST);
         $responses  = array();
         $serialized = stripslashes(urldecode($_POST[Resqee::KEY_POST_JOB_PARAM]));
         $jobs       = unserialize($serialized);
@@ -71,9 +70,9 @@ class Resqee_Controller_Job extends Resqee_Controller
         foreach ($jobs as $jobId => $jobData) {
             $job = unserialize($jobData[Resqee::KEY_POST_JOB_PARAM]);
 
-            if (!is_object($job) || !($job instanceof Resqee_Job)) {
+            if (! is_object($job) || ! ($job instanceof Resqee_Job)) {
                 throw new Resqee_Exception(
-                    "Invalid job. job must be an instance of Resqee_Job"
+                    "Invalid job. Job must be an instance of Resqee_Job"
                 );
             }
 
@@ -82,8 +81,7 @@ class Resqee_Controller_Job extends Resqee_Controller
                 ? unserialize($jobData[Resqee::KEY_POST_JOB_ARGS_PARAM])
                 : null;
 
-            $item = new Resqee_Persistence_Item();
-
+            $item              = new Resqee_Persistence_Item();
             $item->jobId       = $jobId;
             $item->job         = $jobData[Resqee::KEY_POST_JOB_PARAM];
             $item->args        = $jobData[Resqee::KEY_POST_JOB_ARGS_PARAM];
@@ -91,7 +89,10 @@ class Resqee_Controller_Job extends Resqee_Controller
             $item->parentClass = get_parent_class($job);
             $item->requestTime = $this->serverGlobal['REQUEST_TIME'];
 
-            $persist->queue($item);
+            // run before() on each regsitered plugin
+            foreach ($plugins as $plugin) {
+                $plugin->before($item);
+            }
 
             $runner = new Resqee_JobRunner(
                 $job,
@@ -102,8 +103,11 @@ class Resqee_Controller_Job extends Resqee_Controller
             $responses[$jobData[Resqee::KEY_POST_JOB_ID_PARAM]] = $runner->getResponse();
         }
 
+        // run after() for each registered plugin
         foreach ($responses as $jobId => $response) {
-            $persist->completeJob($jobId, $response);
+            foreach ($plugins as $plugin) {
+                $plugin->after($jobId, $response);
+            }
         }
 
         echo serialize($responses);

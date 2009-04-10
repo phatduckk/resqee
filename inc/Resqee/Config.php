@@ -1,6 +1,8 @@
 <?php
 
+require_once 'Resqee.php';
 require_once 'Resqee/Plugins.php';
+require_once 'Resqee/Plugin/Events.php';
 
 class Resqee_Config
 {
@@ -76,13 +78,6 @@ class Resqee_Config
      */
     protected function __construct()
     {
-        if (! defined('RESQEE_CONSTANTS')) {
-            define('RESQEE_PLUGIN_JOB_RUN_BEFORE', Resqe_Plugins::PLUGIN_EVENT_JOB_RUN_BEFORE);
-            define('RESQEE_PLUGIN_JOB_RUN_AFTER' , Resqe_Plugins::PLUGIN_EVENT_JOB_RUN_AFTER);
-            define('RESQEE_PLUGIN_JOB_RUN_BOTH'  , Resqe_Plugins::PLUGIN_EVENT_JOB_RUN_BOTH);
-            define('RESQEE_CONSTANTS', true);
-        }
-
         $isAPCEnabled = Resqee::isAPCEnabled();
 
         if ($isAPCEnabled) {

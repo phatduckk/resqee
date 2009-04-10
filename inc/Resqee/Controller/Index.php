@@ -11,15 +11,10 @@ class Resqee_Controller_Index extends Resqee_Controller
         $this->render();
     }
 
-    /**
-     * Parse the passed in uri and set member variables based on the uri.
-     *
-     * @param string $uri A URI
-     */
-    protected function parseUri($uri)
+    public function foo()
     {
-        $this->action   = 'index';
-        $this->basePath = 'index';
+        print_r($_POST);
+        exit;
     }
 }
 

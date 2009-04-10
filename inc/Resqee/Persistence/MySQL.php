@@ -7,7 +7,7 @@ require_once 'Resqee/Exception/Persistence.php';
 require_once 'Resqee/Persistence/SearchParams.php';
 require_once 'Resqee/Persistence/SearchResults.php';
 
-class Resqee_Persistence_MySQL extends Resqee_Plugin
+class Resqee_Persistence_MySQL extends Resqee_Persistence
 {
     /**
      * A MySQL DB handle
